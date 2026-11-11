@@ -1,0 +1,801 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binance Futures Monitor v3.0</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1220;color:#e7edf7;font:14px system-ui,-apple-system,sans-serif}
+main{max-width:1400px;margin:auto;padding:14px}
+h1{font-size:23px;margin:8px 0}
+h2{font-size:16px}
+small,.muted{color:#a3b5ce}
+.panel,.stat{background:#142239;border:1px solid #30445f;border-radius:12px;padding:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:15px 0}
+.stat b{display:block;font-size:24px;margin-top:5px}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+label{display:flex;flex-direction:column;gap:5px;color:#c2cfe1;font-size:12px}
+select,input,button{padding:10px;border:1px solid #425a79;border-radius:8px;background:#1e304c;color:#fff;min-width:0}
+button{cursor:pointer}
+.primary{background:#f5bd47;color:#142239;font-weight:bold;border:0}
+button:disabled{opacity:.5}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.check{flex-direction:row;align-items:center}
+.check input{min-width:auto}
+.long{color:#46dfa7}
+.short{color:#ff828b}
+.warn{color:#ffca6b}
+.bar{height:8px;background:#263b56;border-radius:9px;overflow:hidden}
+#progress{height:100%;width:0;background:#f5bd47}
+.tablebox{overflow:auto}
+table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:12px}
+th,td{padding:10px 8px;border-bottom:1px solid #2b405b;text-align:right}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#142239}
+th{color:#b9cbe1}
+a{color:#f5bd47}
+.tag{padding:3px 6px;background:#283d59;border-radius:5px}
+#detail{background:#0c1a2e;padding:12px;border-radius:9px;margin-top:10px;line-height:1.8}
+#history{max-height:230px;overflow:auto}
+footer{color:#a3b5ce;font-size:12px;line-height:1.7;margin:20px 0}
+@media(max-width:700px){
+.stats{grid-template-columns:repeat(2,1fr)}
+.controls{grid-template-columns:repeat(2,1fr)}
+h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<main>
+<h1>⚡ BINANCE FUTURES MONITOR v3.0</h1>
+<div class="muted">Quét 5 khung · Phân nhóm coin · EMA + MACD kép + Bollinger Bands · Không tự đặt lệnh</div>
+
+<div class="stats">
+<div class="stat">Hợp đồng <b id="total">—</b></div>
+<div class="stat">Đã phân tích <b id="done">0</b></div>
+<div class="stat">LONG mới <b class="long" id="lc">0</b></div>
+<div class="stat">SHORT mới <b class="short" id="sc">0</b></div>
+</div>
+
+<section class="panel">
+<h2>🔎 Bộ lọc và danh mục Futures</h2>
+<div class="controls">
+<label>Nhóm coin
+<select id="group">
+<option value="all">Tất cả USDT</option>
+<option value="favorites">Yêu thích ★</option>
+<option value="major">BTC & ETH</option>
+<option value="l1">Layer 1</option>
+<option value="l2">Layer 2</option>
+<option value="meme">Meme</option>
+<option value="ai">AI & Big Data</option>
+<option value="defi">DeFi</option>
+<option value="gaming">Gaming</option>
+<option value="rwa">RWA</option>
+<option value="depin">DePIN</option>
+<option value="new">Mới niêm yết 30 ngày</option>
+<optgroup id="customOptions" label="Nhóm tự tạo"></optgroup>
+</select></label>
+
+<label>Khung thời gian
+<select id="tf">
+<option value="all" selected>Cả 5 khung</option>
+<option value="5m">M5</option>
+<option value="15m">M15</option>
+<option value="1h">H1</option>
+<option value="4h">H4</option>
+<option value="1d">D1</option>
+</select></label>
+
+<label>Tín hiệu
+<select id="side">
+<option value="early">Early LONG + SHORT</option>
+<option value="LONG">Chỉ LONG</option>
+<option value="SHORT">Chỉ SHORT</option>
+<option value="all">Tất cả</option>
+</select></label>
+
+<label>Độ mới
+<select id="fresh">
+<option value="1">Nến vừa đóng</option>
+<option value="2">2 nến</option>
+<option value="3" selected>3 nến</option>
+<option value="all">Tất cả</option>
+</select></label>
+
+<label>Chỉ báo
+<select id="indicator">
+<option value="all">Tất cả</option>
+<option value="ema">EMA 7/20, 9/20</option>
+<option value="fast">MACD nhanh 8/17/9</option>
+<option value="standard">MACD chuẩn 12/26/9</option>
+<option value="bb">Bollinger 20,2</option>
+</select></label>
+
+<label>Thanh khoản 24h
+<select id="liq">
+<option value="0">Tất cả</option>
+<option value="1000000">Trên 1 triệu USDT</option>
+<option value="10000000" selected>Trên 10 triệu USDT</option>
+<option value="50000000">Trên 50 triệu USDT</option>
+</select></label>
+
+<label>Sắp xếp
+<select id="sort">
+<option value="new">Mới nhất trước</option>
+<option value="old">Cũ nhất trước</option>
+<option value="strength">Đồng thuận mạnh</option>
+<option value="volume">Thanh khoản</option>
+</select></label>
+
+<label>Tìm coin
+<input id="search" placeholder="BTC, SOL, INIT...">
+</label>
+</div>
+
+<div class="actions">
+<input id="groupName" placeholder="Tên nhóm riêng">
+<input id="groupCoins" placeholder="BTC,ETH,SOL...">
+<button id="saveGroup">＋ Lưu nhóm</button>
+<button id="removeGroup">Xóa nhóm riêng</button>
+</div>
+
+<small id="groupInfo">Chọn nhóm để quét riêng lĩnh vực.</small>
+
+<div class="actions">
+<button class="primary" id="start">▶ Quét ngay</button>
+<button id="stop" disabled>■ Dừng</button>
+<label class="check"><input type="checkbox" id="auto" checked> Tự quét 5 phút</label>
+<button id="notify">🔔 Thông báo</button>
+<label class="check"><input type="checkbox" id="sound"> Âm thanh</label>
+</div>
+
+<div id="status" class="muted">Sẵn sàng quét.</div>
+<div class="bar" style="margin:10px 0"><div id="progress"></div></div>
+<small id="progressText">0 / 0</small>
+<p class="muted">Chỉ sử dụng nến đã đóng. Quét toàn bộ 5 khung có thể kéo dài nhiều phút và chịu giới hạn API Binance.</p>
+</section>
+
+<section class="panel" style="margin-top:12px">
+<h2>🕒 Tín hiệu theo thời gian</h2>
+<small id="stamp"></small>
+<div class="tablebox">
+<table>
+<thead>
+<tr>
+<th>★ Coin</th><th>Khung</th><th>Thời gian</th>
+<th>Số nến</th><th>Chiều</th><th>Chỉ báo</th>
+<th>Đồng thuận</th><th>Giá</th><th>24h</th><th>Volume</th>
+</tr>
+</thead>
+<tbody id="rows">
+<tr><td colspan="10">Chưa có dữ liệu.</td></tr>
+</tbody>
+</table>
+</div>
+<div id="detail" hidden></div>
+</section>
+
+<section class="panel" style="margin-top:12px">
+<h2>🔔 Lịch sử cảnh báo</h2>
+<div id="history">Chưa có cảnh báo.</div>
+<div class="actions"><button id="clearHistory">Xóa lịch sử</button></div>
+</section>
+
+<footer>
+Công cụ sàng lọc kỹ thuật, không phải lời khuyên đầu tư.
+Tín hiệu không phải xác suất thắng. Giá vượt Bollinger trên
+không mặc nhiên là SHORT. Khi đóng Safari, quét tự động
+và thông báo không được bảo đảm hoạt động.
+</footer>
+</main>
+
+<script>
+'use strict';
+
+const API='https://fapi.binance.com';
+const TF=['5m','15m','1h','4h','1d'];
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fmt=(n,d=5)=>Number.isFinite(n)?
+n.toLocaleString('en-US',{maximumFractionDigits:d}):'—';
+
+const SECTORS={
+major:'BTC ETH',
+l1:'SOL ADA AVAX SUI BNB TRX TON DOT ATOM NEAR APT SEI INJ ALGO ICP HBAR KAS',
+l2:'ARB OP STRK ZK ZRO MANTA METIS IMX LRC POL',
+meme:'DOGE SHIB PEPE FLOKI BONK WIF BOME POPCAT BRETT TURBO NEIRO MEW PNUT TRUMP PENGU',
+ai:'FET RENDER RNDR TAO WLD AKT AIXBT VIRTUAL GRASS ARKM NMR',
+defi:'UNI AAVE CRV COMP SUSHI DYDX SNX LDO JUP RAY CAKE ENA ETHFI PENDLE',
+gaming:'GALA IMX SAND MANA AXS PIXEL PORTAL YGG ILV BEAM BIGTIME',
+rwa:'ONDO PENDLE POLYX OM TRU',
+depin:'FIL AR IOTX HNT AKT RENDER RNDR GRASS IO THETA'
+};
+
+const sectorSets=Object.fromEntries(
+Object.entries(SECTORS).map(([k,v])=>[k,new Set(v.split(' '))])
+);
+
+function read(key,fallback){
+try{return JSON.parse(localStorage.getItem(key))??fallback}
+catch{return fallback}
+}
+function save(key,value){
+try{localStorage.setItem(key,JSON.stringify(value))}
+catch{}
+}
+
+let groups=read('bfm3_groups',{});
+let favorites=new Set(read('bfm3_favorites',[]));
+let seen=new Set(read('bfm3_seen',[]));
+let history=read('bfm3_history',[]);
+let universe=[],data=new Map();
+let active=false,run=0,done=0,errors=0;
+let nextScan=0,scanStart=0,initialized=false;
+
+function status(s){$('status').textContent=s}
+
+function normalizeSymbols(text){
+return [...new Set(text.toUpperCase().split(/[\s,;]+/)
+.map(s=>s.trim())
+.filter(Boolean)
+.map(s=>s.endsWith('USDT')?s:s+'USDT'))];
+}
+
+function matchesGroup(m,g){
+if(g==='all')return true;
+if(g==='favorites')return favorites.has(m.symbol);
+if(g==='new')return m.onboardDate>0 &&
+Date.now()-m.onboardDate<=30*86400000;
+if(g.startsWith('custom:'))
+return (groups[g.slice(7)]||[]).includes(m.symbol);
+const base=m.symbol.replace(/USDT$/,'');
+return !!sectorSets[g]?.has(base);
+}
+
+function refreshGroups(){
+const el=$('customOptions'),selected=$('group').value;
+el.replaceChildren();
+for(const name of Object.keys(groups).sort()){
+const o=document.createElement('option');
+o.value='custom:'+name;
+o.textContent=name;
+el.appendChild(o);
+}
+if([...$('group').options].some(o=>o.value===selected))
+$('group').value=selected;
+}
+
+function groupInfo(){
+const count=universe.filter(x=>
+matchesGroup(x,$('group').value)).length;
+$('groupInfo').textContent=universe.length?
+'Nhóm đã chọn: '+count+' hợp đồng đang giao dịch.':
+'Danh mục ngành là danh sách tham khảo, không phải phân loại chính thức của Binance.';
+}
+
+function ema(a,p){
+const k=2/(p+1),out=[];
+let v=a[0];
+for(const x of a){
+v=x*k+v*(1-k);
+out.push(v);
+}
+return out;
+}
+
+function macd(a,fast,slow,signal){
+const f=ema(a,fast),s=ema(a,slow);
+const line=f.map((v,i)=>v-s[i]);
+return {line,sig:ema(line,signal)};
+}
+
+function bollinger(a,p=20,m=2){
+const upper=[],middle=[],lower=[];
+for(let i=0;i<a.length;i++){
+if(i<p-1){
+upper.push(NaN);middle.push(NaN);lower.push(NaN);
+continue;
+}
+const w=a.slice(i-p+1,i+1);
+const avg=w.reduce((x,y)=>x+y,0)/p;
+const variance=w.reduce((x,y)=>x+(y-avg)**2,0)/p;
+const sd=Math.sqrt(variance);
+middle.push(avg);
+upper.push(avg+m*sd);
+lower.push(avg-m*sd);
+}
+return {upper,middle,lower};
+}
+
+async function request(path){
+for(let i=0;i<3;i++){
+try{
+const r=await fetch(API+path,{cache:'no-store'});
+if(r.status===429||r.status===418){
+await sleep(1500*(i+1));
+continue;
+}
+if(!r.ok)throw Error('HTTP '+r.status);
+return await r.json();
+}catch(e){
+if(i===2)throw e;
+await sleep(500*(i+1));
+}
+}
+throw Error('Binance API giới hạn truy cập');
+}
+
+function analyse(k,meta,tf){
+if(!Array.isArray(k)||k.length<70)return null;
+
+// Bỏ nến đang chạy, chỉ giữ nến đã đóng.
+const now=Date.now();
+const closed=k.filter(x=>Number(x[6])<now);
+if(closed.length<65)return null;
+
+const c=closed.map(x=>+x[4]);
+const e7=ema(c,7),e9=ema(c,9),e20=ema(c,20);
+const fast=macd(c,8,17,9);
+const standard=macd(c,12,26,9);
+const bb=bollinger(c,20,2);
+const end=c.length-1;
+const events=[];
+
+// Xét 3 nến đã đóng gần nhất.
+for(let age=0;age<3;age++){
+const i=end-age;
+if(i<30)continue;
+
+function cross(a,b,type,label){
+const prev=a[i-1]-b[i-1];
+const curr=a[i]-b[i];
+let side=null;
+if(prev<=0&&curr>0)side='LONG';
+if(prev>=0&&curr<0)side='SHORT';
+if(!side)return;
+events.push({
+symbol:meta.symbol,tf,type,label,side,age,
+time:+closed[i][6],
+price:c[i],
+key:[meta.symbol,tf,type,label,side,closed[i][6]].join('|')
+});
+}
+
+cross(e7,e20,'ema','EMA7/20');
+cross(e9,e20,'ema','EMA9/20');
+cross(fast.line,fast.sig,'fast','MACD 8/17/9');
+cross(standard.line,standard.sig,'standard','MACD 12/26/9');
+
+cross(e9,bb.middle,'bb','EMA9 / BB giữa');
+cross(e9,bb.upper,'bb','EMA9 / BB trên');
+cross(e9,bb.lower,'bb','EMA9 / BB dưới');
+
+// Giá đóng cửa vượt dải Bollinger.
+if(c[i-1]<=bb.upper[i-1]&&c[i]>bb.upper[i]){
+events.push({
+symbol:meta.symbol,tf,type:'bb',
+label:'Giá vượt BB trên',side:'LONG',age,
+time:+closed[i][6],price:c[i],
+key:[meta.symbol,tf,'BB_UP',closed[i][6]].join('|')
+});
+}
+if(c[i-1]>=bb.lower[i-1]&&c[i]<bb.lower[i]){
+events.push({
+symbol:meta.symbol,tf,type:'bb',
+label:'Giá thủng BB dưới',side:'SHORT',age,
+time:+closed[i][6],price:c[i],
+key:[meta.symbol,tf,'BB_DOWN',closed[i][6]].join('|')
+});
+}
+}
+
+const current={
+ema:e7[end]>e20[end]&&e9[end]>e20[end]?'LONG':
+e7[end]<e20[end]&&e9[end]<e20[end]?'SHORT':'MIX',
+fast:fast.line[end]>fast.sig[end]?'LONG':'SHORT',
+standard:standard.line[end]>standard.sig[end]?'LONG':'SHORT',
+bb:c[end]>bb.upper[end]?'ABOVE':
+c[end]<bb.lower[end]?'BELOW':'INSIDE'
+};
+
+for(const e of events){
+e.agree=
+Number(current.ema===e.side)+
+Number(current.fast===e.side)+
+Number(current.standard===e.side)+
+Number(e.side==='LONG'?
+current.bb==='ABOVE':current.bb==='BELOW');
+}
+
+return {...meta,tf,events,current,updated:Date.now()};
+}
+
+function filtered(){
+const selected=$('tf').value;
+const side=$('side').value;
+const fresh=$('fresh').value;
+const indicator=$('indicator').value;
+const liq=+$('liq').value;
+const query=$('search').value.trim().toUpperCase();
+const group=$('group').value;
+const sort=$('sort').value;
+const list=[];
+
+for(const [symbol,frames] of data){
+for(const tf of selected==='all'?TF:[selected]){
+const x=frames[tf];
+if(!x)continue;
+if(x.quoteVolume<liq)continue;
+if(!symbol.includes(query))continue;
+if(!matchesGroup(x,group))continue;
+
+for(const e of x.events){
+if(fresh!=='all'&&e.age>=+fresh)continue;
+if(indicator!=='all'&&e.type!==indicator)continue;
+if(side==='LONG'||side==='SHORT'){
+if(e.side!==side)continue;
+}
+list.push({
+...e,volume:x.quoteVolume,change:x.change
+});
+}
+}
+}
+
+list.sort((a,b)=>{
+if(sort==='old')return a.time-b.time;
+if(sort==='strength')return b.agree-a.agree||b.time-a.time;
+if(sort==='volume')return b.volume-a.volume||b.time-a.time;
+return b.time-a.time||b.agree-a.agree;
+});
+return list;
+}
+
+function render(){
+const events=filtered();
+$('lc').textContent=events.filter(x=>x.side==='LONG').length;
+$('sc').textContent=events.filter(x=>x.side==='SHORT').length;
+$('done').textContent=done;
+
+$('rows').innerHTML=events.slice(0,400).map(e=>`
+<tr data-key="${encodeURIComponent(e.key)}">
+<td><span data-fav="${e.symbol}" style="color:#f5bd47;cursor:pointer">${favorites.has(e.symbol)?'★':'☆'}</span>
+<a target="_blank" rel="noopener" href="https://www.binance.com/en/futures/${encodeURIComponent(e.symbol)}">${e.symbol}</a></td>
+<td>${e.tf.toUpperCase()}</td>
+<td>${new Date(e.time).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+<td>${e.age}</td>
+<td class="${e.side==='LONG'?'long':'short'}">${e.side}</td>
+<td>${e.label}</td>
+<td>${e.agree}/4</td>
+<td>${fmt(e.price,8)}</td>
+<td class="${e.change>=0?'long':'short'}">${fmt(e.change,2)}%</td>
+<td>${fmt(e.volume/1e6,1)}M</td>
+</tr>`).join('')||
+'<tr><td colspan="10">Không có tín hiệu phù hợp.</td></tr>';
+
+document.querySelectorAll('[data-fav]').forEach(el=>{
+el.onclick=ev=>{
+ev.stopPropagation();
+const sym=el.dataset.fav;
+favorites.has(sym)?favorites.delete(sym):favorites.add(sym);
+save('bfm3_favorites',[...favorites]);
+render();
+};
+});
+
+document.querySelectorAll('tr[data-key]').forEach(tr=>{
+tr.onclick=ev=>{
+if(ev.target.closest('a,[data-fav]'))return;
+const key=decodeURIComponent(tr.dataset.key);
+const e=events.find(x=>x.key===key);
+if(!e)return;
+$('detail').hidden=false;
+$('detail').innerHTML=
+`<b>${e.symbol} · ${e.side} · ${e.label}</b>
+<div>Khung: ${e.tf.toUpperCase()}</div>
+<div>Thời điểm xác nhận: ${new Date(e.time).toLocaleString('vi-VN')}</div>
+<div>Tuổi tín hiệu: ${e.age} nến</div>
+<div>Giá lúc tín hiệu: ${fmt(e.price,8)}</div>
+<div>Đồng thuận: ${e.agree}/4</div>`;
+};
+});
+
+$('history').innerHTML=history.length?
+history.slice(0,30).map(e=>
+`<div style="padding:5px;border-bottom:1px solid #30445f">
+${new Date(e.detected).toLocaleString('vi-VN')}
+· <b class="${e.side==='LONG'?'long':'short'}">${e.side}</b>
+${e.symbol} · ${e.tf.toUpperCase()} · ${e.label}
+</div>`).join(''):
+'Chưa có cảnh báo.';
+}
+
+function beep(){
+if(!$('sound').checked)return;
+try{
+const Audio=window.AudioContext||window.webkitAudioContext;
+if(!Audio)return;
+const ctx=new Audio();
+const osc=ctx.createOscillator();
+const gain=ctx.createGain();
+osc.connect(gain);
+gain.connect(ctx.destination);
+osc.frequency.value=800;
+gain.gain.value=.04;
+osc.start();
+osc.stop(ctx.currentTime+.15);
+osc.onended=()=>ctx.close();
+}catch{}
+}
+
+function alerts(){
+const found=[];
+for(const frames of data.values()){
+for(const x of Object.values(frames)){
+if(x.updated<scanStart)continue;
+for(const e of x.events){
+if(e.age<3)found.push(e);
+}
+}
+}
+
+const fresh=[];
+for(const e of found){
+if(seen.has(e.key))continue;
+seen.add(e.key);
+if(initialized)fresh.push(e);
+}
+
+// Lần quét đầu tiên chỉ tạo mốc,
+// không báo hàng loạt tín hiệu lịch sử.
+if(!initialized){
+initialized=true;
+save('bfm3_seen',[...seen]);
+return;
+}
+
+if(seen.size>10000)
+seen=new Set([...seen].slice(-5000));
+save('bfm3_seen',[...seen]);
+
+if(!fresh.length)return;
+
+history=[
+...fresh.map(e=>({...e,detected:Date.now()})),
+...history
+].slice(0,100);
+save('bfm3_history',history);
+beep();
+
+if('Notification'in window &&
+Notification.permission==='granted'){
+try{
+new Notification('Binance Futures: '+fresh.length+' tín hiệu mới',{
+body:fresh.slice(0,3).map(e=>
+e.symbol+' '+e.tf+' '+e.side).join(' · ')
+});
+}catch{}
+}
+status('🔔 Có '+fresh.length+' tín hiệu mới.');
+render();
+}
+
+async function scan(){
+if(active)return;
+active=true;
+const id=++run;
+done=0;errors=0;
+scanStart=Date.now();
+$('start').disabled=true;
+$('stop').disabled=false;
+$('progress').style.width='0%';
+status('Đang tải danh sách hợp đồng Binance...');
+
+try{
+const [info,tickers]=await Promise.all([
+request('/fapi/v1/exchangeInfo'),
+request('/fapi/v1/ticker/24hr')
+]);
+if(id!==run)return;
+
+const prices=new Map(tickers.map(x=>[x.symbol,x]));
+universe=info.symbols.filter(x=>
+x.quoteAsset==='USDT'&&
+x.contractType==='PERPETUAL'&&
+x.status==='TRADING'
+).map(x=>{
+const t=prices.get(x.symbol)||{};
+return {
+symbol:x.symbol,
+quoteVolume:+t.quoteVolume||0,
+change:+t.priceChangePercent||0,
+onboardDate:+x.onboardDate||0
+};
+}).sort((a,b)=>b.quoteVolume-a.quoteVolume);
+
+$('total').textContent=universe.length;
+groupInfo();
+
+const chosen=universe.filter(x=>
+matchesGroup(x,$('group').value)&&
+x.quoteVolume>=+$('liq').value
+);
+const frames=$('tf').value==='all'?TF:[$('tf').value];
+const queue=[];
+
+// Ưu tiên M5/M15, sau đó H1/H4/D1.
+for(const tf of frames){
+for(const meta of chosen)queue.push({meta,tf});
+}
+
+const total=queue.length;
+data.clear();
+let cursor=0;
+let lastRender=0;
+
+if(!total){
+status('Không có hợp đồng phù hợp nhóm hoặc thanh khoản.');
+nextScan=Date.now()+300000;
+return;
+}
+
+async function worker(){
+while(id===run&&cursor<total){
+const {meta,tf}=queue[cursor++];
+try{
+const k=await request(
+'/fapi/v1/klines?symbol='+
+encodeURIComponent(meta.symbol)+
+'&interval='+tf+'&limit=100'
+);
+if(id!==run)return;
+
+const result=analyse(k,meta,tf);
+if(result){
+const frames=data.get(meta.symbol)||{};
+frames[tf]=result;
+data.set(meta.symbol,frames);
+}else errors++;
+}catch(e){errors++;}
+
+done++;
+
+if(done-lastRender>=10||done===total){
+lastRender=done;
+$('progress').style.width=(done/total*100).toFixed(1)+'%';
+$('progressText').textContent=
+done+' / '+total+' · Lỗi '+errors;
+render();
+}
+await sleep(180);
+}
+}
+
+await Promise.all([
+worker(),worker(),worker()
+]);
+
+if(id!==run)return;
+
+render();
+alerts();
+$('stamp').textContent=
+'Cập nhật: '+new Date().toLocaleString('vi-VN');
+
+if(!$('status').textContent.startsWith('🔔'))
+status('Hoàn tất '+done+'/'+total+
+' lượt quét · '+errors+' lỗi.');
+
+nextScan=Date.now()+300000;
+}catch(e){
+status('Lỗi API Binance: '+e.message);
+nextScan=Date.now()+300000;
+}finally{
+if(id===run){
+active=false;
+$('start').disabled=false;
+$('stop').disabled=true;
+}
+}
+}
+
+$('start').onclick=scan;
+
+$('stop').onclick=()=>{
+run++;
+active=false;
+$('start').disabled=false;
+$('stop').disabled=true;
+nextScan=Date.now()+300000;
+status('Đã dừng quét.');
+};
+
+for(const id of [
+'group','tf','side','fresh','indicator','liq','sort'
+]){
+$(id).onchange=()=>{
+render();
+if(id==='group'||id==='liq')groupInfo();
+};
+}
+$('search').oninput=render;
+
+$('saveGroup').onclick=()=>{
+const name=$('groupName').value.trim().slice(0,40);
+const syms=normalizeSymbols($('groupCoins').value);
+if(!name||!syms.length){
+status('Nhập tên nhóm và danh sách coin.');
+return;
+}
+if(['__proto__','constructor','prototype'].includes(name)||
+name.includes(':')){
+status('Tên nhóm không hợp lệ.');
+return;
+}
+groups[name]=syms;
+save('bfm3_groups',groups);
+refreshGroups();
+$('group').value='custom:'+name;
+groupInfo();
+render();
+status('Đã lưu nhóm '+name+'. Nhấn Quét ngay.');
+};
+
+$('removeGroup').onclick=()=>{
+const g=$('group').value;
+if(!g.startsWith('custom:')){
+status('Chỉ xóa được nhóm tự tạo.');
+return;
+}
+delete groups[g.slice(7)];
+save('bfm3_groups',groups);
+refreshGroups();
+$('group').value='all';
+groupInfo();
+render();
+status('Đã xóa nhóm riêng.');
+};
+
+$('notify').onclick=async()=>{
+if(!('Notification'in window)){
+status('Trình duyệt không hỗ trợ thông báo hệ thống. Cảnh báo trong trang vẫn hoạt động.');
+return;
+}
+try{
+const p=await Notification.requestPermission();
+$('notify').textContent=
+p==='granted'?'🔔 Đã cấp quyền':'🔕 '+p;
+}catch(e){
+status('Không thể bật thông báo hệ thống.');
+}
+};
+
+$('clearHistory').onclick=()=>{
+history=[];
+save('bfm3_history',history);
+render();
+};
+
+$('auto').onchange=()=>{
+nextScan=Date.now()+300000;
+status($('auto').checked?
+'Đã bật quét tự động.':
+'Đã tắt quét tự động.');
+};
+
+refreshGroups();
+groupInfo();
+render();
+
+// Quét tự động khi trang đang mở.
+// Không chạy lượt mới nếu lượt trước chưa xong.
+nextScan=Date.now()+300000;
+setInterval(()=>{
+if($('auto').checked&&!active&&Date.now()>=nextScan)
+scan();
+},15000);
+</script>
+</body>
+</html>
