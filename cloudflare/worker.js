@@ -34,6 +34,12 @@ export default {
         signal:AbortSignal.timeout(20000)
       });
       const data = await response.json().catch(()=>null);
+      if(response.status===429){
+        const retry=response.headers.get("Retry-After");
+        const raw=typeof data?.message==="string"?data.message:typeof data?.error==="string"?data.error:typeof data?.detail==="string"?data.detail:"";
+        const reason=/credit|quota|balance|subscription/i.test(raw)?"quota_or_credits":/rate|too many|limit/i.test(raw)?"rate_limit":"unknown";
+        return json({connected:false,provider:"Nansen",http_status:429,reason,retry_after:retry},429);
+      }
       return json({connected:response.ok && data !== null,provider:"Nansen",http_status:response.status,data},response.ok && data === null ? 502 : response.status);
     } catch {
       return json({connected:false,error:"Nansen request failed"},502);
