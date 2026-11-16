@@ -1347,7 +1347,7 @@ setInterval(flowPaint13,2000);
 /* v18.6.16: lazy on-chain panel, independent of scanner */
 {
 const oldMount18616=mountChart96, cache18616=new Map();
-const fmt18616=(v,usd=false)=>v==null||!Number.isFinite(+v)?'Chưa có dữ liệu':(usd?':'')+new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(+v);
+const fmt18616=(v,usd=false)=>v==null||!Number.isFinite(+v)?'Chưa có dữ liệu':(usd?String.fromCharCode(36):'')+new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(+v);
 const explorers18616={'ethereum':'https://etherscan.io/token/','binance-smart-chain':'https://bscscan.com/token/','solana':'https://solscan.io/token/','polygon-pos':'https://polygonscan.com/token/','arbitrum-one':'https://arbiscan.io/token/','base':'https://basescan.org/token/','optimistic-ethereum':'https://optimistic.etherscan.io/token/','avalanche':'https://snowtrace.io/token/'};
 function el18616(tag,t,parent){const e=document.createElement(tag);e.textContent=t;if(parent)parent.append(e);return e;}
 function link18616(parent,label,url){const a=el18616('a',label,parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.style.cssText='display:block;color:#7dd3fc;overflow-wrap:anywhere;margin:8px 0';}
