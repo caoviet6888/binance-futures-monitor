@@ -1,0 +1,47 @@
+name: Deploy Cloudflare Worker
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/cloudflare-worker.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-worker
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        id: deploy
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare
+          command: deploy
+      - name: Verify Worker health
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          MONITOR_ACCESS_TOKEN: ${{ secrets.MONITOR_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOYMENT_URL" != https://*.workers.dev ]]; then
+            echo "No verified workers.dev deployment URL returned."
+            exit 1
+          fi
+          health=$(curl --fail --silent --show-error --retry 3 --max-time 30 "$DEPLOYMENT_URL/health")
+          echo "$health" | jq -e '.status == "online" and .configured == true and .accessConfigured == true' >/dev/null
+          echo "Worker online; both Worker secrets configured."
+          if [[ -z "$MONITOR_ACCESS_TOKEN" ]]; then
+            echo "::notice::Nansen live test skipped: MONITOR_ACCESS_TOKEN is not configured in GitHub Actions."
+            exit 0
+          fi
+          result=$(curl --fail --silent --show-error --max-time 35 -X POST -H "Authorization: Bearer $MONITOR_ACCESS_TOKEN" "$DEPLOYMENT_URL/test")
+          echo "$result" | jq -e '.connected == true and .http_status == 200' >/dev/null
+          echo "Nansen live test passed."
