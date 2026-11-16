@@ -22,8 +22,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare
-          command: deploy
+          wranglerVersion: '4.162.0'
+          command: deploy --config cloudflare/wrangler.jsonc
       - name: Verify Worker health
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
