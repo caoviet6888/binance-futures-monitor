@@ -17,6 +17,32 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Validate Cloudflare credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$CF_ACCOUNT" =~ ^[a-fA-F0-9]{32}$ ]]; then
+            echo "::error::Account ID must contain exactly 32 hexadecimal characters."
+            exit 1
+          fi
+          if [[ -z "$CF_TOKEN" || "$CF_TOKEN" =~ [[:space:]] || ! "$CF_TOKEN" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "::error::API token must be the raw token only, without spaces, quotes or Bearer prefix."
+            exit 1
+          fi
+          endpoint="https://api.cloudflare.com/client/v4/user/tokens/verify"
+          if [[ "$CF_TOKEN" == cfat_* ]]; then
+            endpoint="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/tokens/verify"
+          fi
+          response=$(curl --silent --show-error --max-time 30 -H "Authorization: Bearer $CF_TOKEN" "$endpoint")
+          if ! jq -e '.success == true and .result.status == "active"' <<< "$response" >/dev/null; then
+            echo "::error::Cloudflare token verification failed. Error codes:"
+            jq -r '.errors[]?.code' <<< "$response"
+            exit 1
+          fi
+          echo "Cloudflare token verified active."
       - uses: cloudflare/wrangler-action@v3
         id: deploy
         with:
