@@ -1487,7 +1487,7 @@ function attachFlow57(details,z){
  const out=document.createElement("div");out.style.cssText="overflow-x:auto";out.textContent="Mở bảng để tải dữ liệu.";
  controls.append(select,mode,btn);panel.append(summary,controls,out);panel.open=true;
  const symbol=z.v.symbol;let rows=null,busy=false,lastStamp="",lastPoll=0,lastMain="",lastMainPoll=0,mainBusy=false; const plot=details.querySelector(".plot96");
- const owner56=Symbol(symbol);details.flowOwner56=owner56;panel.dataset.symbol56=symbol;details.querySelectorAll(".flow45").forEach(n=>n.remove());
+ const owner56=Symbol(symbol);details.flowOwner56=owner56;details.dataset.flowSymbol57=symbol;details.dataset.flowOrigin57=z.v.tf;panel.dataset.symbol56=symbol;details.querySelectorAll(".flow45").forEach(n=>n.remove());
  function ensurePanel56(){if(details.flowOwner56!==owner56)return;const host=plot?.querySelector("details[data-flow-keep1215]"),main=host?.querySelector(".flow186123");if(main&&host.open){if(panel.parentNode!==host||main.nextElementSibling!==panel)main.after(panel);}else if(panel.parentNode!==details){if(plot?.parentNode===details)plot.after(panel);else details.append(panel);}}
  const num=x=>Number.isFinite(x)?x.toFixed(2):"—";
  ensurePanel56();rows=Object.keys(allFrames).map(tf=>[tf,null]);render();
@@ -1507,7 +1507,10 @@ function attachFlow57(details,z){
  const groups57=[["Ngắn hạn",["1m","3m","5m","15m"]],["Trung hạn",["1h","4h"]],["Dài hạn",["1d","1w","1M"]]];
  const groupBox=document.createElement("div");groupBox.style.cssText="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:6px 0";
  for(const [label,fs] of groups57){const valid=rows.filter(([tf,x])=>fs.includes(tf)&&x?.[select.value]&&x.source==="WS"&&x[select.value].buy+x[select.value].sell>0);let buy=0,sell=0;for(const [,x] of valid){const a=x[select.value],p=a.buy/(a.buy+a.sell);if(p>=.55)buy++;else if(p<=.45)sell++;}const complete=valid.length===fs.length;const state=!complete?"CHỜ":buy===fs.length?"MUA ĐỒNG THUẬN":sell===fs.length?"BÁN ĐỒNG THUẬN":buy>fs.length/2?"NGHIÊNG MUA":sell>fs.length/2?"NGHIÊNG BÁN":"TRUNG TÍNH";const cell=document.createElement("div");cell.style.cssText="border:1px solid #40536c;border-radius:7px;padding:5px;text-align:center;font-size:11px";const title=document.createElement("b");title.textContent=label;const line=document.createElement("div");line.textContent=state;line.style.color=!complete?"#afc1d8":buy>fs.length/2?"#4de1a7":sell>fs.length/2?"#ff858c":"#ffce72";const count=document.createElement("small");count.textContent="M "+buy+" / B "+sell+" · "+valid.length+"/"+fs.length;cell.append(title,line,count);groupBox.append(cell);}
- out.prepend(groupBox);const note57=document.createElement("small");note57.textContent="Đồng thuận theo tỷ lệ mua ≥55% / bán ≥55% trên từng khung WS; không cộng volume giữa các khung. Không phải xác suất thắng.";groupBox.after(note57);
+ const overview=document.createElement("div");overview.style.cssText="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:6px 0";
+ let up57=0,down57=0,ready57=0,conflict57=0;
+ for(const [tf,x] of rows){const a=x?.five,total=a?a.buy+a.sell:0,live=x?.source==="WS"&&total>0,p=live?a.buy/total:NaN;const state=!live?"CHỜ WS":p>=.55?"MUA":p<=.45?"BÁN":"TRUNG TÍNH";if(live){ready57++;if(p>=.55)up57++;else if(p<=.45)down57++;if(x.advanced?.kind==="conflict")conflict57++;}const card=document.createElement("button");card.type="button";card.dataset.flowTf49=tf;card.style.cssText="padding:5px 2px;min-width:0;font-size:11px;line-height:1.4;border-color:#40536c;color:"+(state==="MUA"?"#4de1a7":state==="BÁN"?"#ff858c":"#afc1d8");card.textContent=allFrames[tf]+" · "+state+(live?" "+pct(p):"");overview.append(card);}
+ const headline=document.createElement("b");headline.textContent="SMART MONEY UNIFIED PRO · 5 nến LIVE";const verdict=document.createElement("small");verdict.textContent=ready57+"/9 WS · Mua "+up57+" · Bán "+down57+" · "+(ready57<9?"CHỜ ĐỦ DỮ LIỆU":up57>=6?"NGHIÊNG MUA":down57>=6?"NGHIÊNG BÁN":"CHƯA ĐỒNG THUẬN")+(conflict57?" · "+conflict57+" khung nghi hấp thụ":"")+" · Không xác nhận Entry";out.prepend(headline,overview,verdict,groupBox);const note57=document.createElement("small");note57.textContent="Đồng thuận theo tỷ lệ mua ≥55% / bán ≥55% trên từng khung WS; không cộng volume giữa các khung. Không phải xác suất thắng.";groupBox.after(note57);
  const table57=out.querySelector("table");if(table57){table57.querySelectorAll("td,th").forEach(n=>{n.style.padding="5px 4px";n.style.fontSize="12px";});table57.querySelectorAll("button").forEach(n=>{n.style.minHeight="30px";n.style.padding="3px 6px";});}
 
  }
@@ -1551,7 +1554,7 @@ function attachFlow57(details,z){
  }catch{}};
  w.onerror=()=>w.close();w.onclose=()=>{if(socket!==w)return;socket=null;lastSeen.clear();retryAt=Date.now()+3000;};
  }
- out.addEventListener('click',e=>{const b=e.target.closest('[data-flow-tf49]');if(b){const tab=details.querySelector('.tabs96 button[data-tf="'+b.dataset.flowTf49+'"]');if(tab){tab.click();details.querySelector('.tabs96').scrollIntoView({block:'center'});}}});select.onchange=render;mode.onchange=render;btn.onclick=()=>refresh(true);
+ out.addEventListener('click',e=>{const b=e.target.closest('[data-flow-tf49]');if(b){const tab=details.querySelector('.tabs96 button[data-tf="'+b.dataset.flowTf49+'"]');if(tab){tab.click();details.querySelector('.tabs96').scrollIntoView({block:'center'});}}});select.onchange=render;mode.onchange=render;btn.onclick=()=>refresh(true);details.addEventListener("refreshFlow57",()=>{lastDraw="";lastTable="";refresh(true);tick47();});
  function tick47(){
  if(!details.isConnected){stop();clearInterval(timer46);return;}
  if(document.hidden||!details.open){if(socket||liveData.size||lastSeen.size)stop();return;}
@@ -1596,11 +1599,11 @@ window.attachFlow57=attachFlow57;
 })();
 </script><script>
 (()=>{
-const b=document.createElement('button');b.type='button';b.id='refreshDisplay55';b.innerHTML='<span>↻ Tải lại</span><b>Hiển thị</b>';b.style.cssText='color:#ffce72;border-color:#d6a54c';b.title='Vẽ lại kết quả từ phiên hiện tại; không quét lại';
+const b=document.createElement('button');b.type='button';b.id='refreshDisplay55';b.innerHTML='<span>↻ Tải lại</span><b>Hiển thị</b>';b.style.cssText='color:#ffce72;border-color:#d6a54c';b.title='Đồng bộ biểu đồ đang mở hoặc vẽ lại danh sách khi đóng biểu đồ; không quét lại';
 const nav=document.getElementById('nav183');nav.append(b);
 const note=document.createElement('div');note.setAttribute('role','status');note.style.cssText='position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:9999;background:#20334d;color:#fff;padding:10px;border-radius:10px;display:none;pointer-events:none';document.body.append(note);let timer;
 function msg(t){note.textContent=t;note.style.display='block';clearTimeout(timer);timer=setTimeout(()=>note.style.display='none',6500);}
-b.onclick=async()=>{if(b.disabled)return;const session=session16;if(!session||!current16(session)){msg('Chưa có phiên quét để tải lại.');return;}const open=[...document.querySelectorAll('details.chart96[open],details.inline124[open]')];if(open.length&&!confirm('Tải lại danh sách sẽ đóng biểu đồ đang mở. Giữ nguyên phiên quét và bộ lọc. Tiếp tục?'))return;
+b.onclick=async()=>{if(b.disabled)return;const session=session16;if(!session||!current16(session)){msg('Chưa có phiên quét để tải lại.');return;}const open=[...document.querySelectorAll('details.chart96[open],details.inline124[open]')];if(open.length){for(const d of open)d.dispatchEvent(new Event('refreshFlow57'));msg('Đã yêu cầu đồng bộ biểu đồ đang mở · giữ mã, khung và vị trí. Đóng biểu đồ để tải lại toàn bộ danh sách.');return;}
 b.disabled=true;msg('Đang khôi phục hiển thị…');const errors=[];try{for(const d of open)d.open=false;await new Promise(r=>setTimeout(r,80));if(session!==session16||!current16(session)){msg('Phiên quét đã thay đổi. Hãy thử lại.');return;}window.manualRefresh55=true;
 const tasks=[['MACD/EMA',()=>paint16(session)],['Tổng hợp',repaintRank55],['Mạnh',paintSuper172],['Sớm',paint178],['3/3',paint179],['Nến',repaintReversal55],['Đa khung',paint168],['Xếp hạng',paint156],['Kết quả',()=>{delete $('rows163').dataset.sig;diagnostics163();}],['Bollinger/3 chỉ báo',()=>window.refreshBB55()],['±40%',()=>window.refreshExtreme55()],['Dòng tiền',()=>window.refreshFlow55()],['Điều hướng',()=>{dashPaint165();navUpdate183();}]];
 for(const [name,fn] of tasks){try{fn();}catch(e){errors.push(name);console.warn('Refresh55',name,e);}}
