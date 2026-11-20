@@ -2668,13 +2668,13 @@ async function scan(){
  $('m20status').dataset.scope=$('m20scope').value; $('m20status').dataset.symbols=String(list.length);
  const jobs=list.flatMap(sym=>frames.map(tf=>[sym,tf]));total=jobs.length;$('m20status').textContent='Đang quét '+list.length+' mã × '+frames.length+' khung';
  async function worker(){while(jobs.length&&id===epoch){const [sym,tf]=jobs.shift();try{
- const raw=await get('https://fapi.binance.com/fapi/v1/klines?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&limit=30');if(id!==epoch)return;
+ let raw;for(let attempt=0;attempt<3;attempt++){try{raw=await get('https://fapi.binance.com/fapi/v1/klines?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&limit=30');if(!Array.isArray(raw)||raw.length<3)throw Error('Thiếu nến');break}catch(err){if(attempt===2)throw err;await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)))}}if(id!==epoch)return;
  const k=raw.map(v=>({o:+v[1],h:+v[2],l:+v[3],c:+v[4],v:+v[5],end:+v[6]})),now=Date.now(),last=k.length-1,closed=k[last].end<now?last:last-1;
  const vols=k.slice(Math.max(0,closed-21),closed-1).map(x=>x.v),avg=vols.reduce((a,b)=>a+b,0)/Math.max(vols.length,1);
  for(const ix of [closed-1,closed,closed+1]){if(ix<1||ix>=k.length)continue;const c=k[ix],state=c.end>=now?'LIVE':ix===closed-1?'CONFIRM':'CLOSED';
  for(const [pat,side,name] of identify(k[ix-1],c)){if(state==='CONFIRM'){const next=k[closed];if(!next||!((side==='LONG'&&next.c>c.h)||(side==='SHORT'&&next.c<c.l)))continue}
  const range=Math.max(c.h-c.l,1e-12);data.push({sym,tf,pat,side,name,state,price:c.c,rvol:avg?c.v/avg:0,lo:(Math.min(c.o,c.c)-c.l)/range*100,hi:(c.h-Math.max(c.o,c.c))/range*100})}}
- }catch(e){try{await new Promise(r=>setTimeout(r,350));const retry=await get('https://fapi.binance.com/fapi/v1/klines?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&limit=30');if(!Array.isArray(retry)||retry.length<3)failed++;else failed++;}catch(_){failed++}}done++;if(done%12===0||done===total){$('m20status').textContent='Đang quét '+done+'/'+total+' lượt · '+list.length+' mã / '+frames.length+' khung · '+failed+' lỗi';$('m20progress').value=done/Math.max(total,1)*100;render()}}}
+ }catch(e){failed++}done++;if(done%12===0||done===total){$('m20status').textContent='Đang quét '+done+'/'+total+' lượt · '+list.length+' mã / '+frames.length+' khung · '+failed+' lỗi';$('m20progress').value=done/Math.max(total,1)*100;render()}}}
  await Promise.all(Array.from({length:6},worker));if(id===epoch)$('m20status').textContent='Hoàn tất '+done+'/'+total+' lượt · '+list.length+' mã / '+frames.length+' khung · '+failed+' lỗi'+(failed?' · Chưa đủ dữ liệu toàn thị trường':'');
  }catch(e){if(id===epoch)$('m20status').textContent='Không thể quét: '+e.message}
  finally{if(id===epoch){running=false;$('m20run').disabled=false;$('m20stop').hidden=true;render()}}
