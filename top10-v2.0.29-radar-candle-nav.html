@@ -1401,21 +1401,49 @@ $('flowFilter128').onchange=()=>{for(const d of $('flowRows128').querySelectorAl
 window.__radarCandleSnapshot29=function(){
  const ss=session16,now=now110(),out=[];
  if(!ss||!current16(ss))return {rows:[],status:'Chưa có phiên quét toàn thị trường'};
- for(const key of ss.allowed){const [symbol,tf]=key.split('|'),k=ss.data.get(key);
- if(!validSeries16(k,tf,now)||!Array.isArray(k)||k.length<3)continue;
- const closed=k.filter(v=>+v[6]<Date.now());if(closed.length<2)continue;
- const a=closed[closed.length-2],b=closed[closed.length-1];
- const o=+b[1],h=+b[2],l=+b[3],c=+b[4],po=+a[1],pc=+a[4],range=h-l;
- if(!Number.isFinite(range)||range<=0)continue;
- const body=Math.abs(c-o),lower=Math.min(o,c)-l,upper=h-Math.max(o,c),small=body<=range*.36;
- const found=[];
- if(small&&lower>=Math.max(body*2,range*.12)&&lower>=upper*1.8&&c>=l+range*.55)found.push(['LONG','Rút chân tăng']);
- if(small&&upper>=Math.max(body*2,range*.12)&&upper>=lower*1.8&&c<=l+range*.45)found.push(['SHORT','Rút đầu giảm']);
- if(c>o&&pc<po&&o<=pc&&c>=po&&body>Math.abs(pc-po)*1.05)found.push(['LONG','Nhấn chìm tăng']);
- if(c<o&&pc>po&&o>=pc&&c<=po&&body>Math.abs(pc-po)*1.05)found.push(['SHORT','Nhấn chìm giảm']);
- for(const [side,name] of found)out.push({symbol,tf,side,name,price:c,time:+b[6]});
+ const ema=(a,n)=>{const out=[],alpha=2/(n+1);let v=a[0];for(const x of a){v=v+alpha*(x-v);out.push(v)}return out};
+ const avg=(a)=>a.length?a.reduce((v,x)=>v+x,0)/a.length:0;
+ for(const key of ss.allowed){
+  const [symbol,tf]=key.split('|'),k=ss.data.get(key);
+  if(!validSeries16(k,tf,now)||!Array.isArray(k)||k.length<55)continue;
+  const closed=k.filter(v=>+v[6]<Date.now()&&+v[6]>0);
+  if(closed.length<55)continue;
+  const candles=closed.map(v=>({o:+v[1],h:+v[2],l:+v[3],c:+v[4],vol:+v[5],time:+v[6]}));
+  const n=candles.length,i=n-1,b=candles[i],a=candles[i-1],prior=candles.slice(-9,-2);
+  if(![b.o,b.h,b.l,b.c,b.vol,a.o,a.c].every(Number.isFinite))continue;
+  const range=b.h-b.l,body=Math.abs(b.c-b.o);
+  if(range<=0||body/range<.08)continue;
+  const closes=candles.map(x=>x.c),e9=ema(closes,9),e20=ema(closes,20),mfast=ema(closes,12),mslow=ema(closes,26);
+  const mac=mfast.map((x,j)=>x-mslow[j]),msig=ema(mac,9);
+  const avgVol=avg(candles.slice(-21,-1).map(x=>x.vol).filter(Number.isFinite));
+  const rvol=avgVol>0?b.vol/avgVol:0;
+  const trendChange=(b.c-closes[i-6])/Math.max(1e-12,Math.abs(closes[i-6]));
+  const lastLow=Math.min(...prior.map(x=>x.l)),lastHigh=Math.max(...prior.map(x=>x.h));
+  const lower=Math.min(b.o,b.c)-b.l,upper=b.h-Math.max(b.o,b.c);
+  const isSmall=body/range<=.38;
+  const patterns=[];
+  if(isSmall&&lower>=body*2.2&&lower>=upper*2&&b.c>=b.l+range*.6&&b.l<=lastLow*1.003)patterns.push(['LONG','Rút chân tăng']);
+  if(isSmall&&upper>=body*2.2&&upper>=lower*2&&b.c<=b.l+range*.4&&b.h>=lastHigh*.997)patterns.push(['SHORT','Rút đầu giảm']);
+  const prevBody=Math.abs(a.c-a.o);
+  if(b.c>b.o&&a.c<a.o&&b.o<=a.c&&b.c>=a.o&&body>=prevBody*1.2&&body/range>=.55)patterns.push(['LONG','Nhấn chìm tăng']);
+  if(b.c<b.o&&a.c>a.o&&b.o>=a.c&&b.c<=a.o&&body>=prevBody*1.2&&body/range>=.55)patterns.push(['SHORT','Nhấn chìm giảm']);
+  if(!patterns.length)continue;
+  for(const [side,name] of patterns){
+   const dir=side==='LONG'?1:-1;
+   const trendPrior=dir===1?trendChange<-.001:trendChange>.001;
+   const emaAgree=dir*(e9[i]-e20[i])>0;
+   const macAgree=dir*(mac[i]-msig[i])>0;
+   const macImproving=dir*((mac[i]-msig[i])-(mac[i-1]-msig[i-1]))>0;
+   const volConfirm=rvol>=1.1;
+   const patternStrong=body/range>=.58||Math.max(lower,upper)/range>=.58;
+   const score=(trendPrior?2:0)+(volConfirm?1:0)+(emaAgree?1:0)+(macAgree?1:0)+(macImproving?1:0)+(patternStrong?1:0);
+   // Require prior directional context and either indicator improvement or volume confirmation.
+   if(!trendPrior||score<4||!(macImproving||volConfirm))continue;
+   const grade=score>=6&&emaAgree&&macAgree?'ĐỒNG THUẬN MẠNH':score>=5?'XÁC NHẬN':'ĐẠT LỌC';
+   out.push({symbol,tf,side,name,price:b.c,time:b.time,grade,score,rvol:+rvol.toFixed(2),emaAgree,macAgree});
+  }
  }
- return {rows:out,status:'Dữ liệu từ phiên Radar hiện tại · '+(ss.metas?.length||0)+' mã · '+(ss.frames||[]).join(', ')};
+ return {rows:out,status:'Radar '+(ss.metas?.length||0)+' mã · '+(ss.frames||[]).join(', ')+' · nến đóng + xu hướng + EMA/MACD + RVOL'};
 };
 window.addEventListener('DOMContentLoaded',()=>{try{(()=>{
 const root=document.createElement('main');root.id='radarStandalone20';
@@ -3282,7 +3310,7 @@ const heading=document.createElement('b');heading.textContent=symbol+' · '+item
 const times=document.createElement('p');times.textContent=items.map(x=>x.tf.toUpperCase()).join(' · ');
 d.append(heading,times);
 for(const x of items){const line=document.createElement('div');line.style.cssText='display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin:7px 0;padding:6px;border-top:1px solid #39526e';
-const desc=document.createElement('span');desc.textContent=x.tf.toUpperCase()+' · '+x.name+' · '+x.price;
+const desc=document.createElement('span');desc.textContent=x.tf.toUpperCase()+' · '+x.name+' · '+x.grade+' ('+x.score+'/7) · RVOL '+x.rvol+' · EMA '+(x.emaAgree?'✓':'–')+' · MACD '+(x.macAgree?'✓':'–')+' · '+x.price;
 const btn=document.createElement('button');btn.type='button';btn.textContent='Biểu đồ '+x.tf.toUpperCase();btn.onclick=()=>{const input=$('radarSearch20'),open=$('radarChart20');if(input&&open){input.value=symbol;open.click();$('radarChartHost20')?.scrollIntoView({behavior:'smooth'})}};
 line.append(desc,btn);d.append(line)}root.append(d)}
 if(!grouped.size)root.textContent='Chưa có mẫu nến '+side+' trong dữ liệu Radar.';
