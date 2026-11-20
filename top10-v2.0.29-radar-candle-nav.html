@@ -2825,37 +2825,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #mc203marketPanel > section{display:block!important;visibility:visible!important;opacity:1!important}
 #radarStandalone20.mc203show > section:has(#radarGo20){display:block!important}
 </style>
-<script>
-/* V2.0.3: make Radar goc visible without depending on the candle panel's hidden body */
-(()=>{'use strict';
-function setup(){
- const root=document.getElementById('mc20'),host=document.getElementById('radarStandalone20');
- if(!root||!host)return;
- let btn=document.getElementById('mc203marketToggle'),panel=document.getElementById('mc203marketPanel');
- if(!btn){
-  btn=document.createElement('button');btn.id='mc203marketToggle';btn.type='button';btn.textContent='▸ 🌐 QUÉT TOÀN THỊ TRƯỜNG RADAR GỐC · Mở bảng';
-  panel=document.createElement('div');panel.id='mc203marketPanel';panel.dataset.open='0';
-  root.after(btn,panel);
-  btn.onclick=()=>{const yes=panel.dataset.open!=='1';panel.dataset.open=yes?'1':'0';host.classList.toggle('mc203show',yes);btn.textContent=yes?'▾ 🌐 QUÉT TOÀN THỊ TRƯỜNG RADAR GỐC · Thu gọn':'▸ 🌐 QUÉT TOÀN THỊ TRƯỜNG RADAR GỐC · Mở bảng';btn.setAttribute('aria-expanded',String(yes));sync()};
- }
- if(root.nextElementSibling!==btn)root.after(btn);
- if(btn.nextElementSibling!==panel)btn.after(panel);
- sync();
- function sync(){
-  const market=document.getElementById('radarGo20')?.closest('section');
-  if(!market)return;
-  if(market.parentElement!==panel)panel.append(market);
-  const open=panel.dataset.open==='1';
-  panel.style.setProperty('display',open?'block':'none','important');
-  market.hidden=!open;
-  market.style.setProperty('display',open?'block':'none','important');
-  if(open)market.removeAttribute('data-hide217');
- }
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
-setInterval(setup,1500);
-})();
-</script>
+
 <style>
 #mc204scanBar{position:sticky;top:0;z-index:20;background:#192c46;border:1px solid #506d90;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13px;color:#dce9fa}
 #mc204scanBar[data-running="1"]{border-left:4px solid #f5c451}
@@ -3269,55 +3239,27 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #mc203marketPanel[data-open="1"]{display:block!important}
 #mc20 #m20body[hidden]{display:none!important}
 </style>
-<script id="mc229toggle">
-(()=>{'use strict';let lastTouch=0;
-function parts(){return {c:document.getElementById('mc20'),body:document.getElementById('m20body'),ct:document.getElementById('m20toggle'),m:document.getElementById('mc203marketPanel'),mt:document.getElementById('mc203marketToggle'),host:document.getElementById('radarStandalone20')}}
-function setCandle(on){const {c,body,ct}=parts();if(!c)return;c.classList.toggle('mc229closed',!on);c.hidden=!on;if(on){c.style.setProperty('display','block','important');if(body){body.hidden=false;body.style.removeProperty('display')}}else{c.style.removeProperty('display');if(body){body.hidden=true;body.style.removeProperty('display')}}if(ct)ct.textContent=on?'Thu gọn ▴':'Mở bảng ▾'}
-function setRadar(on){const {m,mt,host}=parts();if(!m)return;m.dataset.open=on?'1':'0';m.hidden=!on;m.style.removeProperty('display');host?.classList.toggle('mc203show',on);host?.classList.toggle('mc201radar',on);if(mt)mt.textContent=on?'▾ 🌐 QUÉT TOÀN THỊ TRƯỜNG · Thu gọn':'▸ 🌐 QUÉT TOÀN THỊ TRƯỜNG · Mở bảng'}
-function switchPanel(which){const {c,m,mt}=parts();if(which==='candle'){const on=!!c&&(c.hidden||c.classList.contains('mc229closed'));setRadar(false);setCandle(on);if(on)c.scrollIntoView({behavior:'smooth',block:'start'})}
-else{const on=!!m&&m.dataset.open!=='1';setCandle(false);setRadar(on);if(on)(mt||m).scrollIntoView({behavior:'smooth',block:'start'})}}
-function intercept(e){const b=e.target?.closest?.('button');if(!b)return;const id=b.id;let which=null;if(id==='mc220openCandle'||id==='mc219candle'||id==='m20toggle'||id==='mc223back')which='candle';else if(id==='mc208radar'||id==='mc203marketToggle')which='radar';if(!which)return;if(e.type==='click'&&Date.now()-lastTouch<550){e.preventDefault();e.stopImmediatePropagation();return}if(e.type==='touchend')lastTouch=Date.now();e.preventDefault();e.stopImmediatePropagation();switchPanel(which)}
-window.addEventListener('click',intercept,true);window.addEventListener('touchend',intercept,true);
-function initialize(){const {c}=parts();if(c&&!c.dataset.mc229){c.dataset.mc229='1';setCandle(false);setRadar(false)}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initialize);else initialize();setInterval(initialize,1800);
-})();
-</script>
 
 
-<style id="candleNavFinalStyle">
-/* Hide only the obsolete independent candle scanner, never the market Radar. */
-#mc20,#mc208nav,#mc208notice,#mc204scanBar,#mc207switch,#marketCandle17,#radarCandleNav,#radarCandleResults{display:none!important}
-#radarStandalone20 #mc203marketPanel[data-open="1"]{display:block!important;visibility:visible!important}
-#radarStandalone20 #mc203marketToggle{display:block!important;visibility:visible!important}
-#candleNavFinalRows[hidden]{display:none!important}
-#candleNavFinalRows{grid-column:1/-1;background:#14253e;border:1px solid #456584;border-radius:10px;padding:12px;margin:8px 0}
-#candleNavFinalRows .item{padding:10px;border:1px solid #3b5778;border-radius:8px;margin:8px 0;background:#1b2e49}
-#candleNavFinalLong{color:#4de1a7!important}#candleNavFinalShort{color:#ff8b92!important}
+
+
+<style id="radarCandleGridFix">
+#mc20,#mc208nav,#mc208notice,#mc204scanBar,#mc207switch,#marketCandle17{display:none!important}
+#radarStandalone20 #marketPanelFix29[hidden],#radarCandleListFix29[hidden]{display:none!important}
+#marketToggleFix29{width:100%;text-align:left;background:#243954;color:#eaf2ff;padding:12px;border:1px solid #526b89;border-radius:10px;margin:10px 0}
+#radarCandleListFix29{padding:12px;border:1px solid #4d6887;border-radius:10px;background:#172a42;margin:8px 0}
+#radarCandleListFix29 .item{padding:9px;margin:7px 0;border:1px solid #435d7b;border-radius:8px}
+#candleLongFix29{color:#4de1a7!important}#candleShortFix29{color:#ff8b92!important}
 </style>
-<script id="candleNavFinalScript">
-(()=>{'use strict';const $=id=>document.getElementById(id);let selected='',sig='';
-function mount(){const host=$('radarStandalone20');if(!host)return;
- const market=$('mc203marketToggle');if(market){market.hidden=false;market.style.removeProperty('display')}
- const grid=[...host.querySelectorAll('button')].find(b=>b.textContent.includes('ĐỒNG THUẬN SHORT'))?.parentElement;
- if(!grid||$('candleNavFinalLong'))return;
- const l=document.createElement('button'),s=document.createElement('button'),panel=document.createElement('section');
- l.id='candleNavFinalLong';s.id='candleNavFinalShort';l.type=s.type='button';l.textContent='🟢 NẾN LONG · 0';s.textContent='🔴 NẾN SHORT · 0';
- panel.id='candleNavFinalRows';panel.hidden=true;panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px"><strong id="candleNavFinalTitle"></strong><button type="button" id="candleNavFinalClose">✕ Đóng</button></div><small id="candleNavFinalStatus"></small><div id="candleNavFinalItems"></div>';
- grid.append(l,s,panel);l.onclick=()=>toggle('LONG');s.onclick=()=>toggle('SHORT');$('candleNavFinalClose').onclick=()=>{selected='';panel.hidden=true};
+<script id="radarCandleGridFixScript">
+(()=>{'use strict';const $=id=>document.getElementById(id);let side='',sig='';
+function mount(){const host=$('radarStandalone20');if(!host)return;const nav=host.querySelector('nav');if(!nav)return;
+ if(!$('candleLongFix29')){const a=document.createElement('button'),b=document.createElement('button'),panel=document.createElement('section');a.id='candleLongFix29';b.id='candleShortFix29';a.textContent='🟢 NẾN LONG · 0';b.textContent='🔴 NẾN SHORT · 0';a.type=b.type='button';nav.append(a,b);panel.id='radarCandleListFix29';panel.hidden=true;panel.innerHTML='<strong id="radarCandleTitleFix29"></strong><button id="radarCandleCloseFix29" type="button" style="float:right">✕ Đóng</button><p id="radarCandleStatusFix29"></p><div id="radarCandleItemsFix29"></div>';nav.after(panel);a.onclick=()=>toggle('LONG');b.onclick=()=>toggle('SHORT');$('radarCandleCloseFix29').onclick=()=>{side='';panel.hidden=true}}
+ if(!$('marketToggleFix29')){const btn=document.createElement('button');btn.id='marketToggleFix29';btn.textContent='▸ 🌐 QUÉT TOÀN THỊ TRƯỜNG · Mở bảng';const panel=document.createElement('div');panel.id='marketPanelFix29';panel.hidden=true;const list=$('radarCandleListFix29');list.after(btn,panel);btn.onclick=()=>{panel.hidden=!panel.hidden;btn.textContent=panel.hidden?'▸ 🌐 QUÉT TOÀN THỊ TRƯỜNG · Mở bảng':'▾ 🌐 QUÉT TOÀN THỊ TRƯỜNG · Thu gọn';const market=$('radarGo20')?.closest('section');if(market){market.hidden=panel.hidden;market.style.display=panel.hidden?'none':'block'}}}
+ const market=$('radarGo20')?.closest('section'),panel=$('marketPanelFix29');if(market&&panel&&market.parentElement!==panel){panel.append(market);market.hidden=panel.hidden;market.style.display=panel.hidden?'none':'block'}
 }
-function toggle(side){const panel=$('candleNavFinalRows');if(!panel)return;if(selected===side){selected='';panel.hidden=true;return}selected=side;panel.hidden=false;sig='';paint();panel.scrollIntoView({behavior:'smooth',block:'nearest'})}
-function paint(){const get=window.__radarCandleSnapshot29;if(typeof get!=='function')return;let data;try{data=get()}catch(e){if($('candleNavFinalStatus'))$('candleNavFinalStatus').textContent='Lỗi: '+e.message;return}
- const long=data.rows.filter(x=>x.side==='LONG'),short=data.rows.filter(x=>x.side==='SHORT');
- if($('candleNavFinalLong'))$('candleNavFinalLong').textContent='🟢 NẾN LONG · '+long.length;
- if($('candleNavFinalShort'))$('candleNavFinalShort').textContent='🔴 NẾN SHORT · '+short.length;
- if(!selected||!$('candleNavFinalRows'))return;
- const rows=(selected==='LONG'?long:short).sort((a,b)=>b.time-a.time||a.symbol.localeCompare(b.symbol));
- $('candleNavFinalTitle').textContent=(selected==='LONG'?'🟢 NẾN LONG':'🔴 NẾN SHORT')+' · '+rows.length+' tín hiệu';
- $('candleNavFinalStatus').textContent=data.status+' · Dùng dữ liệu Radar, không quét riêng';
- const next=JSON.stringify(rows);if(sig===next)return;sig=next;const root=$('candleNavFinalItems');root.replaceChildren();
- for(const x of rows){const item=document.createElement('div');item.className='item';const title=document.createElement('b');title.textContent=x.symbol+' · '+x.tf.toUpperCase()+' · '+x.name;const p=document.createElement('p');p.textContent='Giá '+x.price+' · nến đóng '+new Date(x.time).toLocaleString('vi-VN');const btn=document.createElement('button');btn.type='button';btn.textContent='Xem biểu đồ';btn.onclick=()=>{const input=$('radarSearch20'),open=$('radarChart20');if(input&&open){input.value=x.symbol;open.click();$('radarChartHost20')?.scrollIntoView({behavior:'smooth',block:'start'})}};item.append(title,p,btn);root.append(item)}
- if(!rows.length)root.textContent='Chưa có mẫu nến '+selected+' trong dữ liệu Radar đã quét.';
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();setInterval(()=>{mount();paint()},1300);
+function toggle(x){const panel=$('radarCandleListFix29');if(!panel)return;if(side===x){side='';panel.hidden=true;return}side=x;panel.hidden=false;sig='';paint();panel.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function paint(){const fn=window.__radarCandleSnapshot29;if(typeof fn!=='function')return;let data;try{data=fn()}catch(e){return}const long=data.rows.filter(x=>x.side==='LONG'),short=data.rows.filter(x=>x.side==='SHORT');if($('candleLongFix29'))$('candleLongFix29').textContent='🟢 NẾN LONG · '+long.length;if($('candleShortFix29'))$('candleShortFix29').textContent='🔴 NẾN SHORT · '+short.length;if(!side||!$('radarCandleListFix29'))return;const rows=side==='LONG'?long:short;$('radarCandleTitleFix29').textContent='NẾN '+side+' · '+rows.length+' tín hiệu';$('radarCandleStatusFix29').textContent=data.status+' · Không quét riêng';const next=JSON.stringify(rows);if(next===sig)return;sig=next;const root=$('radarCandleItemsFix29');root.replaceChildren();for(const x of rows){const d=document.createElement('div');d.className='item';const b=document.createElement('b');b.textContent=x.symbol+' · '+x.tf+' · '+x.name;const p=document.createElement('p');p.textContent='Giá '+x.price+' · '+new Date(x.time).toLocaleString('vi-VN');const btn=document.createElement('button');btn.textContent='Xem biểu đồ';btn.onclick=()=>{$('radarSearch20').value=x.symbol;$('radarChart20').click();$('radarChartHost20').scrollIntoView({behavior:'smooth'})};d.append(b,p,btn);root.append(d)}if(!rows.length)root.textContent='Chưa có mẫu nến '+side+' từ Radar'}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();setInterval(()=>{mount();paint()},1200);
 })();
 </script>
