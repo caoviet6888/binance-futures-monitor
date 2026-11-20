@@ -3301,3 +3301,11 @@ function paint(){const bridge=window.__radarCandleSnapshot29;if(typeof bridge!==
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();setInterval(()=>{mount();paint()},1800);
 })();
 </script>
+<style id="removeLegacyCandleScanner29">
+/* Permanently hide all old standalone candle scanner controls and navigation. */
+#mc20,#m20body,#mc208nav,#mc208notice,#mc207switch,#mc207notice,#mc206navLong,#mc206navShort,#mc204scanBar,#mc220openCandle,#mc219candle,#mc223back,#marketCandle17,#mc203marketPanel,#mc203marketToggle,#radarCandleNav,#radarCandleResults{display:none!important;visibility:hidden!important}
+#nav183 #candleInline29:not([hidden]){display:block!important}
+</style>
+<script id="removeLegacyCandleScanner29JS">
+(()=>{'use strict';function clean(){const ids=['mc20','mc208nav','mc208notice','mc207switch','mc207notice','mc204scanBar','mc203marketPanel','mc203marketToggle','marketCandle17'];for(const id of ids){const e=document.getElementById(id);if(e){e.hidden=true;e.style.setProperty('display','none','important')}}const host=document.getElementById('radarStandalone20');if(!host)return;for(const e of host.querySelectorAll('button')){if(e.id==='candleLongNav29'||e.id==='candleShortNav29')continue;if(['mc220openCandle','mc219candle','mc223back','mc208long','mc208short','mc208all','mc208radar','mc207long','mc207short','mc207radar'].includes(e.id)){e.hidden=true;e.style.setProperty('display','none','important')}}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();setInterval(clean,1800)})();
+</script>
