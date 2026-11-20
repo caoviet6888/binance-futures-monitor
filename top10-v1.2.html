@@ -2377,7 +2377,7 @@ function detect(rows,tf,symbol){const candles=rows.map(candle);if(candles.length
 }
 const host=document.createElement('section');host.id='early12';host.innerHTML='<h2>TOP10 V1.2 · TÍN HIỆU SỚM + NẾN XÁC NHẬN</h2><p><small>Quét riêng 10 mã đã chọn · M5/M15/H1/H4/D1 · ưu tiên rút chân LONG và rút râu SHORT. WATCH không phải tín hiệu vào lệnh. Chỉ nến đã đóng mới được xác nhận.</small></p><div><button id="early12run">Quét tín hiệu sớm</button><button id="early12stop">Dừng</button><select id="early12side"><option value="ALL">LONG + SHORT</option><option>LONG</option><option>SHORT</option></select></div><p id="early12status">Sẵn sàng · 0/50 khung</p><div id="early12results"></div>';
 const mount=()=>{const anchor=document.getElementById('top10FuturesPanel');if(anchor)anchor.after(host);else document.body.prepend(host);};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+mount();
 let token=0;
 const out=()=>document.getElementById('early12results'),status=()=>document.getElementById('early12status');
 document.getElementById('early12stop').onclick=()=>{token++;status().textContent+=' · Đã dừng';};
