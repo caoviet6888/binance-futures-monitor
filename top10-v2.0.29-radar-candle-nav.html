@@ -1437,13 +1437,22 @@ window.__radarCandleSnapshot29=function(){
    const volConfirm=rvol>=1.1;
    const patternStrong=body/range>=.58||Math.max(lower,upper)/range>=.58;
    const score=(trendPrior?2:0)+(volConfirm?1:0)+(emaAgree?1:0)+(macAgree?1:0)+(macImproving?1:0)+(patternStrong?1:0);
-   // Require prior directional context and either indicator improvement or volume confirmation.
-   if(!trendPrior||score<4||!(macImproving||volConfirm))continue;
-   const grade=score>=6&&emaAgree&&macAgree?'ĐỒNG THUẬN MẠNH':score>=5?'XÁC NHẬN':'ĐẠT LỌC';
-   out.push({symbol,tf,side,name,price:b.c,time:b.time,grade,score,rvol:+rvol.toFixed(2),emaAgree,macAgree});
+   // Early-first: identify a turn BEFORE EMA/MACD cross, but only after a CLOSED reversal candle.
+   const hist=mac[i]-msig[i],prevHist=mac[i-1]-msig[i-1],olderHist=mac[i-2]-msig[i-2];
+   const momentumTurn=dir*(hist-prevHist)>0&&dir*(prevHist-olderHist)>=0;
+   const emaGap=dir*(e9[i]-e20[i]),prevEmaGap=dir*(e9[i-1]-e20[i-1]);
+   const emaConverging=emaGap>prevEmaGap;
+   const macNearCross=!macAgree&&momentumTurn&&Math.abs(hist)<=Math.max(Math.abs(mac[i])*.4,Math.abs(prevHist)*.8);
+   const early=trendPrior&&patternStrong&&(momentumTurn||emaConverging)&&
+     (volConfirm||rvol>=.85&&momentumTurn)&&(!emaAgree||!macAgree);
+   const confirmed=trendPrior&&score>=5&&macAgree&&emaAgree;
+   if(!early&&!confirmed)continue;
+   const grade=early?'SỚM':score>=6&&volConfirm?'ĐỒNG THUẬN MẠNH':'XÁC NHẬN';
+   const priority=early?0:grade==='XÁC NHẬN'?1:2;
+   out.push({symbol,tf,side,name,price:b.c,time:b.time,grade,priority,score,rvol:+rvol.toFixed(2),emaAgree,macAgree,macNearCross,emaConverging,momentumTurn});
   }
  }
- return {rows:out,status:'Radar '+(ss.metas?.length||0)+' mã · '+(ss.frames||[]).join(', ')+' · nến đóng + xu hướng + EMA/MACD + RVOL'};
+ return {rows:out,status:'Radar '+(ss.metas?.length||0)+' mã · '+(ss.frames||[]).join(', ')+' · ƯU TIÊN SỚM: nến đóng + MACD đổi hướng + EMA hội tụ + RVOL'};
 };
 window.addEventListener('DOMContentLoaded',()=>{try{(()=>{
 const root=document.createElement('main');root.id='radarStandalone20';
@@ -3298,19 +3307,19 @@ function paint(){const fn=window.__radarCandleSnapshot29;if(typeof fn!=='functio
 for(const [id,key,label] of [['candleLongFix29','LONG','🟢 NẾN LONG'],['candleShortFix29','SHORT','🔴 NẾN SHORT'],['candleTopLong29','TOP_LONG','🟢 NẾN LONG TOP 10'],['candleTopShort29','TOP_SHORT','🔴 NẾN SHORT TOP 10']])if($(id))$(id).textContent=label+' · '+counts[key].size;
 if(!selected||!$('radarCandleListFix29'))return;
 const isTop=selected.startsWith('TOP_'),side=isTop?selected.slice(4):selected;
-const rows=all.filter(x=>x.side===side&&(!isTop||top10.has(x.symbol))).sort((a,b)=>b.time-a.time||a.symbol.localeCompare(b.symbol));
+const rows=all.filter(x=>x.side===side&&(!isTop||top10.has(x.symbol))).sort((a,b)=>(a.priority??9)-(b.priority??9)||b.time-a.time||a.symbol.localeCompare(b.symbol));
 const grouped=new Map();for(const x of rows){if(!grouped.has(x.symbol))grouped.set(x.symbol,[]);grouped.get(x.symbol).push(x)}
 $('radarCandleTitleFix29').textContent='NẾN '+side+(isTop?' TOP 10':'')+' · '+grouped.size+' mã / '+rows.length+' tín hiệu';
 $('radarCandleStatusFix29').textContent=data.status+' · Gộp theo mã, các khung thời gian cùng một thẻ · Không quét riêng';
 const next=JSON.stringify(rows);if(next===sig)return;sig=next;const root=$('radarCandleItemsFix29');root.replaceChildren();
 const frameOrder=['1m','3m','5m','15m','30m','1h','4h','1d','1w','1M'];
-for(const [symbol,items] of grouped){items.sort((x,y)=>frameOrder.indexOf(x.tf)-frameOrder.indexOf(y.tf));
+for(const [symbol,items] of grouped){items.sort((x,y)=>(x.priority??9)-(y.priority??9)||frameOrder.indexOf(x.tf)-frameOrder.indexOf(y.tf));
 const d=document.createElement('div');d.className='item';
-const heading=document.createElement('b');heading.textContent=symbol+' · '+items.length+' khung có tín hiệu';
+const heading=document.createElement('b');heading.textContent=(items.some(x=>x.grade==='SỚM')?'⚡ SỚM · ':'')+symbol+' · '+items.length+' khung có tín hiệu';
 const times=document.createElement('p');times.textContent=items.map(x=>x.tf.toUpperCase()).join(' · ');
 d.append(heading,times);
 for(const x of items){const line=document.createElement('div');line.style.cssText='display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin:7px 0;padding:6px;border-top:1px solid #39526e';
-const desc=document.createElement('span');desc.textContent=x.tf.toUpperCase()+' · '+x.name+' · '+x.grade+' ('+x.score+'/7) · RVOL '+x.rvol+' · EMA '+(x.emaAgree?'✓':'–')+' · MACD '+(x.macAgree?'✓':'–')+' · '+x.price;
+const desc=document.createElement('span');desc.textContent=x.tf.toUpperCase()+' · '+x.name+' · '+x.grade+' ('+x.score+'/7) · RVOL '+x.rvol+' · EMA '+(x.emaAgree?'✓':x.emaConverging?'đang hội tụ':'–')+' · MACD '+(x.macAgree?'✓':x.macNearCross?'gần cắt':x.momentumTurn?'đổi hướng':'–')+' · '+x.price;
 const btn=document.createElement('button');btn.type='button';btn.textContent='Biểu đồ '+x.tf.toUpperCase();btn.onclick=()=>{const input=$('radarSearch20'),open=$('radarChart20');if(input&&open){input.value=symbol;open.click();$('radarChartHost20')?.scrollIntoView({behavior:'smooth'})}};
 line.append(desc,btn);d.append(line)}root.append(d)}
 if(!grouped.size)root.textContent='Chưa có mẫu nến '+side+' trong dữ liệu Radar.';
