@@ -1731,7 +1731,7 @@ function attachFlow57(details,z){
  function connect(){
  if(socket||Date.now()<retryAt)return;
  const gen=epoch;let w;
- try{w=new WebSocket("wss://fstream.binance.com/market/stream?streams="+Object.keys(allFrames).map(tf=>symbol.toLowerCase()+"@kline_"+tf).join("/"));}catch{retryAt=Date.now()+5000;return;}
+ try{w=new WebSocket("wss://fstream.binance.com/stream?streams="+Object.keys(allFrames).map(tf=>symbol.toLowerCase()+"@kline_"+tf).join("/"));}catch{retryAt=Date.now()+5000;return;}
  socket=w;socketAt=Date.now();
  w.onopen=()=>{if(socket!==w)return;lastSeed=Date.now();refresh(false);};
  w.onmessage=e=>{if(socket!==w||gen!==epoch)return;try{
