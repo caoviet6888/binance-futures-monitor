@@ -1,0 +1,50 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Radar V2.0.29 · Binance ruler test</title></head><body style="background:#0e1626;color:#fff;font-family:sans-serif"><p>Đang tải Radar V2.0.29 và thước đo cải tiến…</p><script>
+(async()=>{
+try{
+const r=await fetch('./top10-v2.0.29-multiframe.html',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+let html=await r.text();
+const start=html.indexOf('<style>.rulerOn275');
+const end=start<0?-1:html.indexOf('</script>',start);
+if(start>=0&&end>start)html=html.slice(0,start)+html.slice(end+9);
+const patch=`<style>
+svg[data-ruler275]{touch-action:pan-y}
+svg[data-ruler275].measureActive{touch-action:none;cursor:crosshair}
+.measureBtn{background:#263951;color:#fff;border:1px solid #627b9b;border-radius:7px;padding:9px;font-weight:700}
+.measureBtn[aria-pressed=true]{background:#efc967;color:#152238}
+</style><script>
+(()=>{'use strict';
+const NS='http://www.w3.org/2000/svg', states=new WeakMap(), bound=new WeakSet();
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const el=(tag,attrs={},txt)=>{const n=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));if(txt!==undefined)n.textContent=txt;return n};
+const format=v=>Number(v.toPrecision(9)).toLocaleString('en-US',{maximumFractionDigits:8});
+function data(svg){const [lo,hi,right,n,t,s,tf]=svg.dataset.ruler275.split('|');return {lo:+lo,hi:+hi,right:+right,n:+n,t:t.split(',').map(Number),key:s+'|'+tf};}
+function state(plot){let st=states.get(plot);if(!st){st={on:false,drag:false,a:null,b:null,key:'',raf:0,svg:null};states.set(plot,st)}return st}
+function coords(svg,e){const m=data(svg),matrix=svg.getScreenCTM();if(!matrix)return null;const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(matrix.inverse());if(q.x<8||q.x>m.right+4||q.y<12||q.y>212)return null;const i=clamp(Math.round((q.x-10)/(m.right-13)*(m.n-1)),0,m.n-1);return {i,t:m.t[i],price:m.hi-(q.y-12)/200*(m.hi-m.lo),x:10+i*(m.right-13)/(m.n-1),y:q.y}}
+function render(plot){const st=state(plot),svg=plot.querySelector('svg[data-ruler275]');if(!svg)return;const m=data(svg);if(st.key!==m.key){st.key=m.key;st.a=st.b=null;st.drag=false}svg.classList.toggle('measureActive',st.on);let layer=svg.querySelector('.measureOverlay');if(!layer){layer=el('g',{class:'measureOverlay','pointer-events':'none'});svg.append(layer)}layer.replaceChildren();if(!st.on||!st.a)return;
+const a=st.a,b=st.b||a;const c=b.price>=a.price?'#53dfae':'#ff7988',delta=b.price-a.price,pct=a.price?delta/a.price*100:0;
+layer.append(el('line',{x1:10,y1:b.y,x2:m.right,y2:b.y,stroke:c,'stroke-width':1,'stroke-dasharray':'4 3'}),el('line',{x1:b.x,y1:12,x2:b.x,y2:212,stroke:c,'stroke-dasharray':'3 4'}));
+layer.append(el('rect',{x:m.right-1,y:clamp(b.y-9,12,195),width:68,height:19,rx:4,fill:c}),el('text',{x:m.right+33,y:clamp(b.y+4,25,208),'text-anchor':'middle','font-size':10,'font-weight':'bold',fill:'#0c1726'},format(b.price)));
+if(!st.b)return;
+layer.append(el('rect',{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),width:Math.abs(b.x-a.x),height:Math.abs(b.y-a.y),fill:c,'fill-opacity':.13,stroke:c,'stroke-dasharray':'4 3'}));
+const minutes=Math.round(Math.abs(b.t-a.t)/60000),duration=minutes>=1440?Math.floor(minutes/1440)+' ngày '+Math.floor(minutes%1440/60)+' giờ':minutes>=60?Math.floor(minutes/60)+' giờ '+minutes%60+' phút':minutes+' phút';
+const x=clamp((a.x+b.x)/2-87,10,Math.max(10,m.right-175)),y=clamp(Math.min(a.y,b.y)-44,12,166);
+layer.append(el('rect',{x,y,width:174,height:41,rx:5,fill:'#19283d',stroke:c}),el('text',{x:x+87,y:y+12,'text-anchor':'middle','font-size':10,'font-weight':'bold',fill:c},(delta>0?'+':'')+format(delta)+' ('+pct.toFixed(2)+'%)'),el('text',{x:x+87,y:y+25,'text-anchor':'middle','font-size':9,fill:'#fff'},format(a.price)+' → '+format(b.price)),el('text',{x:x+87,y:y+36,'text-anchor':'middle','font-size':9,fill:'#fff'},Math.abs(b.i-a.i)+' nến · '+duration));
+}
+function draw(plot){const st=state(plot);if(st.raf)return;st.raf=requestAnimationFrame(()=>{st.raf=0;render(plot)})}
+function install(plot){const svg=plot.querySelector('svg[data-ruler275]');if(!svg)return;const st=state(plot);const bar=plot.closest('details')?.querySelector('.ind219');if(bar&&!bar.querySelector('.measureBtn')){const btn=document.createElement('button');btn.type='button';btn.className='measureBtn';btn.textContent='📏 ĐO BINANCE';btn.setAttribute('aria-pressed',String(st.on));btn.addEventListener('click',()=>{st.on=!st.on;st.drag=false;st.a=st.b=null;btn.setAttribute('aria-pressed',String(st.on));draw(plot)});bar.append(btn)}
+if(bound.has(svg)){if(st.svg!==svg)st.svg=svg;return}bound.add(svg);st.svg=svg;
+svg.addEventListener('pointerdown',e=>{if(!st.on||e.button!==0)return;const p=coords(svg,e);if(!p)return;e.preventDefault();st.a=p;st.b=null;st.drag=true;try{svg.setPointerCapture(e.pointerId)}catch(_){}draw(plot)},{passive:false});
+svg.addEventListener('pointermove',e=>{if(!st.on)return;const p=coords(svg,e);if(!p)return;if(st.drag){st.b=p;draw(plot)}else if(e.pointerType==='mouse'){st.a=p;st.b=null;draw(plot)}},{passive:true});
+const finish=e=>{if(!st.drag)return;st.drag=false;try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch(_){}draw(plot)};
+svg.addEventListener('pointerup',finish);svg.addEventListener('pointercancel',finish);
+draw(plot)}
+let queued=false;function scan(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;document.querySelectorAll('.plot96').forEach(install)})}
+const old=window.mergeChart267;if(typeof old==='function')window.mergeChart267=function(plot,html){if(state(plot).drag)return;const out=old.apply(this,arguments);install(plot);return out};
+new MutationObserver(records=>{if(records.some(r=>Array.from(r.addedNodes).some(n=>n.nodeType===1&&!n.matches?.('.measureOverlay')&&!n.closest?.('.measureOverlay'))))scan()}).observe(document.body,{childList:true,subtree:true});scan();
+})();
+<\/script>`;
+html=html.replace('</body>',patch+'</body>');
+document.open();document.write(html);document.close();
+}catch(e){document.body.innerHTML='<h3>Không tải được bản gốc V2.0.29</h3><p>'+String(e.message)+'</p>'}
+})();
+</script></body></html>
