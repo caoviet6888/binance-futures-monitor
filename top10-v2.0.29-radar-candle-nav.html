@@ -111,6 +111,8 @@ async function loadLarge(id,force=false){
  $('capstatus').textContent='TOP10 V1.4 · 10/10 mã theo danh sách cố định đã chọn · vốn hóa tham chiếu 20/11/2026 · hợp đồng Binance hợp lệ · '+new Date(largeStamp).toLocaleTimeString('vi-VN');
 }
 
+// Read-only TOP10 direction bridge: uses existing scanner results, never starts another scan.
+window.__top10RadarDirections29=()=>({symbols:[...largeMap.keys()],rows:[...largeTrends].map(([key,value])=>({symbol:key.split('|')[0],tf:key.split('|')[1],...value})),updated:largeStamp,scanned:new Set((session16?.metas||[]).map(m=>m.symbol)).size});
 // Dedicated TOP 10 Futures dashboard, same underlying scanner and signal algorithms.
 function installTop10Futures(){
  const host=document.getElementById('radarStandalone20');if(!host||document.getElementById('top10FuturesPanel'))return;
@@ -3296,3 +3298,40 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <script defer src="./top10-v2.0.29-price-cursor.js?v=2"></script>
+
+<script id="top10LongShortNav29">
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+let side='',signature='';
+const order=['1m','3m','5m','15m','1h','4h','1d'];
+function mount(){
+ const host=$('radarStandalone20'),nav=host?.querySelector('nav');if(!nav)return;
+ if($('top10LongRadar29'))return;
+ const long=document.createElement('button'),short=document.createElement('button');
+ long.id='top10LongRadar29';short.id='top10ShortRadar29';long.type=short.type='button';
+ long.onclick=()=>toggle('LONG');short.onclick=()=>toggle('SHORT');
+ nav.append(long,short);
+ const panel=document.createElement('section');panel.id='top10DirectionPanel29';panel.hidden=true;
+ panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b id="top10DirectionTitle29"></b><button type="button" id="top10DirectionClose29">✕ Đóng</button></div><small id="top10DirectionStatus29"></small><div id="top10DirectionRows29"></div>';
+ nav.after(panel);$('top10DirectionClose29').onclick=()=>{side='';panel.hidden=true};
+ nav.addEventListener('click',e=>{if(e.target.closest('#top10LongRadar29,#top10ShortRadar29'))return;side='';panel.hidden=true},true);
+}
+function toggle(next){if(side===next){side='';$('top10DirectionPanel29').hidden=true;return}side=next;signature='';$('top10DirectionPanel29').hidden=false;paint();$('top10DirectionPanel29').scrollIntoView({block:'start',behavior:'smooth'})}
+function paint(){
+ const fn=window.__top10RadarDirections29;if(!fn)return;let d;try{d=fn()}catch{return}
+ const symbols=new Set(d.symbols),now=Date.now(),rows=d.rows.filter(x=>symbols.has(x.symbol)&&x.open===Math.floor(now/({'1m':60000,'3m':180000,'5m':300000,'15m':900000,'1h':3600000,'4h':14400000,'1d':86400000}[x.tf]||60000))*({'1m':60000,'3m':180000,'5m':300000,'15m':900000,'1h':3600000,'4h':14400000,'1d':86400000}[x.tf]||60000));
+ const groups={LONG:new Map(),SHORT:new Map()};for(const x of rows){if(!groups[x.dir])continue;const map=groups[x.dir];if(!map.has(x.symbol))map.set(x.symbol,[]);map.get(x.symbol).push(x.tf)}
+ for(const [id,label,key] of [['top10LongRadar29','TOP 10 LONG','LONG'],['top10ShortRadar29','TOP 10 SHORT','SHORT']]){const b=$(id);if(b)b.textContent=label+' · '+groups[key].size}
+ if(!side)return;const list=groups[side],panel=$('top10DirectionPanel29');if(!panel)return;
+ $('top10DirectionTitle29').textContent='TOP 10 '+side+' · '+list.size+' mã';
+ $('top10DirectionStatus29').textContent='Xu hướng EMA9/MA20 + MACD từ Radar · '+symbols.size+'/10 mã trong danh sách · dữ liệu nến đóng · không phải tín hiệu Entry';
+ const sig=JSON.stringify([...list]);if(sig===signature)return;signature=sig;
+ const root=$('top10DirectionRows29');root.replaceChildren();
+ for(const [symbol,tfs] of list){const row=document.createElement('div');row.style.cssText='border:1px solid #435d7b;border-radius:8px;padding:10px;margin:8px 0';const b=document.createElement('b');b.textContent=symbol+' · '+tfs.sort((a,b)=>order.indexOf(a)-order.indexOf(b)).map(x=>x.toUpperCase()).join(' / ');const open=document.createElement('button');open.textContent='Mở biểu đồ';open.onclick=()=>{const input=$('radarSearch20'),btn=$('radarChart20');if(input&&btn){input.value=symbol;btn.click();$('radarChartHost20')?.scrollIntoView({block:'start',behavior:'smooth'})}};row.append(b,open);root.append(row)}
+ if(!list.size)root.textContent=symbols.size?'Chưa có mã '+side+' đạt điều kiện trong dữ liệu Radar hiện tại.':'Chưa quét nhóm Top 10. Chọn TOP 10 FUTURES và quét trước.';
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+setInterval(()=>{mount();paint()},2000);
+})();
+</script>
+<style>#top10LongRadar29{color:#4de1a7!important}#top10ShortRadar29{color:#ff858c!important}#top10DirectionPanel29{background:#172a42;border:1px solid #435d7b;border-radius:12px;padding:12px;margin:10px 0}#top10DirectionPanel29[hidden]{display:none!important}</style>
