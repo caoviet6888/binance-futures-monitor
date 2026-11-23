@@ -1,7 +1,7 @@
 /* v2.0.29: transient horizontal price cursor on the price pane only. */
 (()=>{'use strict';
 const css=document.createElement('style');
-css.textContent='#radarStandalone20 .plot96{position:relative}#radarStandalone20 .priceTouch29{position:absolute;left:0;top:0;width:100%;height:39.5%;z-index:5;touch-action:none;background:transparent;cursor:crosshair}#radarStandalone20 .priceTouch29[hidden]{display:none!important}';
+css.textContent='#radarStandalone20 .plot96{position:relative}#radarStandalone20 .priceTouch29{position:absolute;left:0;top:0;width:100%;height:39.5%;z-index:5;touch-action:pan-y;background:transparent;cursor:crosshair}#radarStandalone20 .priceTouch29[hidden]{display:none!important}';
 document.head.append(css);
 const NS='http://www.w3.org/2000/svg',instances=new WeakMap();
 function element(tag,attrs){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));return e}
@@ -16,7 +16,7 @@ function setup(plot){
   const label=element('text',{x:413,y:104,'text-anchor':'end','font-size':11,fill:'#ffffff'});
   layer.append(line,bg,label);
   state={overlay,layer,line,bg,label,svg:null,active:false,hideTimer:null};
-  overlay.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;state.active=true;clearTimeout(state.hideTimer);try{overlay.setPointerCapture(e.pointerId)}catch{};draw(e);e.preventDefault()});
+  overlay.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;state.active=true;clearTimeout(state.hideTimer);try{overlay.setPointerCapture(e.pointerId)}catch{};draw(e);/* allow native vertical scrolling */});
   overlay.addEventListener('pointermove',e=>{if(state.active)draw(e)});
   function finish(){if(!state.active)return;state.active=false;clearTimeout(state.hideTimer);state.hideTimer=setTimeout(()=>{state.layer.setAttribute('visibility','hidden')},1400)}
   overlay.addEventListener('pointerup',finish);overlay.addEventListener('pointercancel',finish);overlay.addEventListener('lostpointercapture',finish);
