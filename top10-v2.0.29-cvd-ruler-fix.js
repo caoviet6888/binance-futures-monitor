@@ -1,25 +1,15 @@
-/* v2.0.29 CVD + touch ruler enhancement; original scanner unchanged */
+/* v2.0.29 native CVD renderer: generated with every candle SVG; no DOM polling. */
 (()=>{'use strict';
-const style=document.createElement('style');style.textContent='.cvdFix29{margin:8px 0 12px;padding:9px;background:#101d30;border:1px solid #3d6076;border-radius:9px}.cvdFix29 b{color:#57e3c4}.cvdFix29 svg{width:100%;height:auto;display:block}.cvdFix29 small{display:block;color:#afc1d8;margin-top:5px}.rulerTouch29{touch-action:none!important;user-select:none}.rulerHelp29{font-size:11px;color:#a8d9ff;padding:5px 0}';document.head.append(style);
-const cache=new Map(),original=window.controls219;
-if(typeof original!=='function')return;
-function cvd(k){const rows=k.slice(-100);if(rows.length<2)return '<small>Chưa đủ dữ liệu CVD.</small>';
-let sum=0,valid=0;const vals=rows.map(x=>{const volume=+x[7],buy=+x[10];if(!Number.isFinite(volume)||!Number.isFinite(buy)||volume<0||buy<0||buy>volume){return null}valid++;return sum+=2*buy-volume});
-if(valid<2)return '<small>Binance chưa cung cấp đủ dữ liệu taker-buy để vẽ CVD chính xác; không nội suy từ nến.</small>';
-const W=420,H=118,L=9,R=408,T=12,B=98,good=vals.filter(Number.isFinite),min=Math.min(...good,0),max=Math.max(...good,0),span=max-min||1;
-const x=i=>L+(R-L)*i/(rows.length-1),y=v=>B-(v-min)/span*(B-T);
-let d='',open=false;vals.forEach((v,i)=>{if(v===null){open=false;return}d+=(open?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)+' ';open=true});
-const last=good.at(-1),col=last>=0?'#4de1a7':'#ff858c';
-return '<svg viewBox="0 0 420 118" role="img" aria-label="CVD taker buy sell USDT"><path d="M9 '+y(0)+' H408" stroke="#64748b" stroke-dasharray="3 3"/><path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"/><text x="408" y="11" text-anchor="end" fill="'+col+'" font-size="11">'+Math.round(last).toLocaleString('en-US')+' USDT</text></svg><small>CVD tích lũy từ taker buy/sell theo USDT · '+valid+'/'+rows.length+' nến có dữ liệu · nến cuối có thể đang chạy</small>';
-}
-window.controls219=function(z,tf,k,right){const key=z.v.symbol+'|'+tf;cache.set(key,cvd(k));return original.apply(this,arguments)};
-function place(){for(const plot of document.querySelectorAll('#radarStandalone20 .plot96')){const detail=plot.closest('details.chart96');if(!detail)continue;const bar=detail.querySelector('.ind219[data-ind219]');if(!bar)continue;const key=bar.dataset.ind219;const vwap=bar.querySelector('[data-toggle219="VWAP"]');if(vwap)vwap.remove();let panel=detail.querySelector('.cvdFix29');if(!panel){panel=document.createElement('div');panel.className='cvdFix29';panel.innerHTML='<b>CVD · DÒNG TIỀN TÍCH LŨY</b><div class="cvdFixBody29"></div>';plot.append(panel)}const data=cache.get(key);const body=panel.querySelector('.cvdFixBody29');if(data&&body.dataset.key!==key+'|'+data.length+'|'+data.slice(-100)){body.innerHTML=data;body.dataset.key=key+'|'+data.length+'|'+data.slice(-100)}panel.hidden=false;const cvdBtn=bar.querySelector('[data-toggle219="CVD"]');if(cvdBtn){cvdBtn.setAttribute('aria-pressed','true');cvdBtn.style.display='none'}
-const old=detail.querySelector('.cvd2195');if(old)old.style.display='none';
-const svg=plot.querySelector('svg[data-ruler275]');const btn=bar.querySelector('.rulerBtn275');if(!svg||!btn)continue;
-if(!svg.dataset.touchFix29){svg.dataset.touchFix29='1';svg.addEventListener('pointerdown',e=>{if(btn.getAttribute('aria-pressed')!=='true')return;e.stopImmediatePropagation();e.preventDefault();const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const mat=svg.getScreenCTM();if(!mat)return;const q=p.matrixTransform(mat.inverse()),a=svg.dataset.ruler275.split('|'),lo=+a[0],hi=+a[1],right=+a[2],n=+a[3],times=a[4].split(',').map(Number);if(q.y<12||q.y>212||q.x<8||q.x>right+3)return;const idx=Math.max(0,Math.min(n-1,Math.round((q.x-10)/(right-13)*(n-1)))),price=hi-(q.y-12)/200*(hi-lo),point={x:10+idx*(right-13)/(n-1),y:q.y,t:times[idx],price};let state=svg.__measure29;if(!state||state.b){state={a:point,b:null};svg.__measure29=state}else state.b=point;
-svg.querySelector('.measureLayer29')?.remove();const NS='http://www.w3.org/2000/svg',g=document.createElementNS(NS,'g');g.setAttribute('class','measureLayer29');g.setAttribute('pointer-events','none');const mk=(tag,attrs,txt)=>{const el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(txt!==undefined)el.textContent=txt;g.append(el)};const A=state.a,B=state.b||point,delta=B.price-A.price,pct=A.price?100*delta/A.price:0,color=delta>=0?'#4de1a7':'#ff858c';mk('rect',{x:Math.min(A.x,B.x),y:Math.min(A.y,B.y),width:Math.abs(B.x-A.x)||1,height:Math.abs(B.y-A.y)||1,fill:color,'fill-opacity':'.16',stroke:color});mk('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,stroke:color,'stroke-width':2});mk('circle',{cx:A.x,cy:A.y,r:3,fill:color});mk('circle',{cx:B.x,cy:B.y,r:3,fill:color});const tx=Math.max(10,Math.min(right-170,(A.x+B.x)/2-85)),ty=Math.max(12,Math.min(175,Math.min(A.y,B.y)-43));mk('rect',{x:tx,y:ty,width:170,height:39,rx:5,fill:'#14253b',stroke:color});mk('text',{x:tx+85,y:ty+14,'text-anchor':'middle',fill:color,'font-size':11},(delta>=0?'+':'')+Number(delta.toPrecision(6))+' ('+pct.toFixed(2)+'%)');mk('text',{x:tx+85,y:ty+28,'text-anchor':'middle',fill:'#e7eefb','font-size':10},Math.abs(times.indexOf(B.t)-times.indexOf(A.t))+' nến · '+Math.round(Math.abs(B.t-A.t)/60000)+' phút');svg.append(g);
-},true)}
-svg.classList.toggle('rulerTouch29',btn.getAttribute('aria-pressed')==='true');if(!btn.dataset.touchFix29){btn.dataset.touchFix29='1';btn.addEventListener('click',()=>{svg.__measure29=null;svg.querySelector('.measureLayer29')?.remove();svg.classList.toggle('rulerTouch29',btn.getAttribute('aria-pressed')==='true')})}
-}}
-let pending=false;function schedule(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;place()})}document.addEventListener('click',schedule,true);setInterval(schedule,900);schedule();
+const style=document.createElement('style');
+style.textContent='#radarStandalone20 [data-toggle219="VWAP"],#radarStandalone20 [data-toggle219="CVD"],#radarStandalone20 .cvd2195{display:none!important}';
+document.head.append(style);
+window.cvdInline29=function(rows){
+ const k=rows.slice(-100),n=k.length;if(n<2)return '';
+ let sum=0,valid=0;const v=k.map(a=>{const total=Number(a[7]),buy=Number(a[10]);if(a[7]==null||a[10]==null||!Number.isFinite(total)||!Number.isFinite(buy)||total<0||buy<0||buy>total)return null;valid++;return sum+=2*buy-total});
+ const nums=v.filter(x=>x!==null),lo=Math.min(0,...nums),hi=Math.max(0,...nums),span=hi-lo||1;
+ const X=i=>10+i*397/(n-1),Y=a=>522-(a-lo)/span*90;
+ let path='',connected=false;v.forEach((a,i)=>{if(a===null){connected=false;return}path+=(connected?'L':'M')+X(i).toFixed(2)+' '+Y(a).toFixed(2)+' ';connected=true});
+ const last=nums.at(-1)||0,color=last>=0?'#4de1a7':'#ff858c';
+ return '<g class="cvdNative29"><path d="M10 402H408" stroke="#344b66"/><text x="10" y="419" fill="#57e3c4" font-size="11">CVD · DÒNG TIỀN TÍCH LŨY (USDT)</text><path d="M10 '+Y(0)+'H408" stroke="#64748b" stroke-dasharray="3 3"/><path d="'+path+'" stroke="'+color+'" stroke-width="1.7" fill="none"/><text x="408" y="428" text-anchor="end" font-size="11" fill="'+color+'">'+Math.round(last).toLocaleString('en-US')+' USDT</text><text x="10" y="535" font-size="9" fill="#afc1d8">Taker buy/sell · '+valid+'/'+n+' nến có dữ liệu</text></g>';
+};
 })();
