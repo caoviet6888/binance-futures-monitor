@@ -3316,3 +3316,24 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
+
+<!-- Lightweight v8: open the integrated Radar instead of legacy preview landing -->
+<script id="lightweightLandingV8">
+(function(){
+'use strict';
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+let landed=false,attempts=0;
+function land(){
+ if(landed||attempts++>50)return;
+ const radar=document.getElementById('radarStandalone20');
+ if(!radar){setTimeout(land,150);return;}
+ landed=true;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  const top=radar.getBoundingClientRect().top+window.scrollY-8;
+  window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+ }));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',land,{once:true});else land();
+window.addEventListener('pageshow',()=>{if(!landed)land()},{once:true});
+})();
+</script>
