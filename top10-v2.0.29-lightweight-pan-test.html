@@ -317,7 +317,16 @@ function chart96(k,tf,z){k=k.slice(0,Math.max(2,k.length-(z.historyOffset29||0))
 function mountChart96(details,z){
 let key=z.v.symbol+'|'+z.v.tf,st=z.boll1862?{tf:z.v.tf,open:false}:(chartState96.get(key)||{tf:z.v.tf,open:false});chartState96.delete(key);chartState96.set(key,st);while(chartState96.size>200)chartState96.delete(chartState96.keys().next().value);
 const plot=details.querySelector('.plot96'),tabs=details.querySelector('.tabs96');let seq=0,painted='',timer=null,historyK29=null;z.historyOffset29=0;
-function show(k,tf,extra=''){if(!k||k.length<2)return;historyK29=k;painted=z.v.symbol+'|'+tf;window.renderLWC29?.(plot,k,tf,z);}
+function show(k,tf,extra=''){if(!k||k.length<2)return;historyK29=k;painted=z.v.symbol+'|'+tf;
+let legacy=details.querySelector('.legacyPanelsLWC29');
+if(!legacy){legacy=document.createElement('div');legacy.className='legacyPanelsLWC29';plot.after(legacy);}
+const full=chart96(k,tf,z),cut=full.indexOf('</svg>');
+if(cut>=0){const tail=full.slice(cut+6);const temp=document.createElement('div');temp.innerHTML=tail;
+const oldBar=legacy.querySelector('.ind219');const newBar=temp.querySelector('.ind219');
+if(oldBar&&newBar){oldBar.replaceWith(newBar);newBar.remove();}
+legacy.replaceChildren(...Array.from(temp.childNodes));}
+window.renderLWC29?.(plot,k,tf,z);
+}
 async function draw(){if(!details.open||!details.isConnected)return;const tf=st.tf,n=++seq,ck=z.v.symbol+'|'+tf;z.historyOffset29=0;details.querySelector('summary').textContent='📊 '+z.v.symbol+' · Biểu đồ '+chartFrames96[tf];tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.tf===tf;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});let k=chartHistory25.get(ck)||session16?.data.get(ck)||candleCache.get(ck);if(k?.length>=2&&painted!==ck)show(k,tf,'<small>Đang đồng bộ Binance · dữ liệu lịch sử</small>');else if(painted!==ck){plot.textContent='Đang tải '+chartFrames96[tf]+'…';painted='';}
 try{k=await chartData97(z.v.symbol,tf);if(!Array.isArray(k))throw Error('Dữ liệu không hợp lệ');if(n===seq&&details.open&&details.isConnected&&st.tf===tf&&!plot.querySelector('[data-live47]'))show(k,tf,diag110(z.v.symbol,tf)+(k.chartFallback?'<small>⚠ Dữ liệu cache; tải mới thất bại.</small>':'')+(k.some(a=>a[7]==null||a[10]==null)?'<small>⚠ Một số nến thiếu volume mua/bán.</small>':''));}catch(e){if(n===seq&&painted!==ck)plot.textContent='Không tải được biểu đồ: '+e.message;}}
 tabs.innerHTML=Object.entries(chartFrames96).map(([t,l])=>'<button data-tf="'+t+'">'+l+'</button>').join('');tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(st.tf===b.dataset.tf&&painted)return;st.tf=b.dataset.tf;draw()});
