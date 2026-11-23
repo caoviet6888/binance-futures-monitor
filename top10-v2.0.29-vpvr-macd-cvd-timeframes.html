@@ -3356,16 +3356,44 @@ function draw(rows){
 const a=rows.slice(-100),cl=a.map(x=>+x[4]),e12=ema(cl,12),e26=ema(cl,26),mac=e12.map((v,i)=>v-e26[i]),sig=ema(mac,9),hist=mac.map((v,i)=>v-sig[i]),scale=Math.max(0.000001,...mac.map(Math.abs),...sig.map(Math.abs),...hist.map(Math.abs)),my=v=>82-v/scale*60;
 let cv=0;const cvd=a.map(x=>{let q=+x[7],b=+x[10];if(!Number.isFinite(q)||!Number.isFinite(b)||q<0||b<0||b>q)return cv;cv+=2*b-q;return cv}),low=Math.min(0,...cvd),high=Math.max(0,...cvd),cy=v=>210-(v-low)/(high-low||1)*82;
 let bars=hist.map((v,i)=>{const x=8+i*324/Math.max(1,hist.length-1),y=my(v);return '<path d="M'+x.toFixed(1)+' 82V'+y.toFixed(1)+'" stroke="'+(v>=0?'#69d6ad':'#ed8892')+'" stroke-width="2.3"/>'}).join('');
-return '<div class="vpvrMetric29">MACD 12/26/9 · MACD '+fmt(mac.at(-1))+' · Signal '+fmt(sig.at(-1))+' · Histogram '+fmt(hist.at(-1))+'</div><svg viewBox="0 0 340 115" aria-label="MACD"><path d="M8 82H332" stroke="#657994"/>'+bars+'<path d="'+path(mac,my)+'" stroke="#79b5ff" fill="none" stroke-width="1.5"/><path d="'+path(sig,my)+'" stroke="#ffce72" fill="none" stroke-width="1.5"/></svg><div class="vpvrMetric29">CVD · Dòng tiền tích lũy USDT · '+fmt(cv)+'</div><svg viewBox="0 0 340 232" aria-label="CVD"><path d="M8 '+cy(0)+'H332" stroke="#657994" stroke-dasharray="4 4"/><path d="'+path(cvd,cy)+'" stroke="#77dfb7" stroke-width="2" fill="none"/></svg><div class="vpvrMetric29">CVD ước tính theo taker buy/sell của Binance Futures; không phải tiền nạp/rút. '+a.length+' nến.</div>';
+return '<div class="vpvrMetric29">MACD 12/26/9 · MACD '+fmt(mac.at(-1))+' · Signal '+fmt(sig.at(-1))+' · Histogram '+fmt(hist.at(-1))+'</div><svg viewBox="0 0 340 115" aria-label="MACD"><path d="M8 82H332" stroke="#657994"/>'+bars+'<path d="'+path(mac,my)+'" stroke="#79b5ff" fill="none" stroke-width="1.5"/><path d="'+path(sig,my)+'" stroke="#ffce72" fill="none" stroke-width="1.5"/></svg><div class="vpvrMetric29">CVD · Dòng tiền tích lũy USDT · '+fmt(cv)+'</div><svg viewBox="0 105 340 115" aria-label="CVD"><path d="M8 '+cy(0)+'H332" stroke="#657994" stroke-dasharray="4 4"/><path d="'+path(cvd,cy)+'" stroke="#77dfb7" stroke-width="2" fill="none"/></svg><div class="vpvrMetric29">CVD ước tính theo taker buy/sell của Binance Futures; không phải tiền nạp/rút. '+a.length+' nến.</div>';
 }
 async function data(symbol,tf){const key=symbol+'|'+tf;if(cache.has(key)&&Date.now()-cache.get(key).at<15000)return cache.get(key).rows;if(pending.has(key))return pending.get(key);const p=(async()=>{const response=await fetch('https://fapi.binance.com/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+'&interval='+encodeURIComponent(tf)+'&limit=120');if(!response.ok)throw Error('Binance HTTP '+response.status);const rows=await response.json();if(!Array.isArray(rows)||rows.length<25)throw Error('Không đủ dữ liệu');cache.set(key,{rows,at:Date.now()});if(cache.size>80)cache.delete(cache.keys().next().value);return rows})();pending.set(key,p);try{return await p}finally{pending.delete(key)}}
 function symbolOf(d){const local=d.closest('.chart96,.signal96,#radarStandalone20');const heading=local?.querySelector('summary,.chartTitle96');const text=(heading?.textContent||'')+' '+(document.getElementById('radarSearch20')?.value||'');return text.match(/\b[A-Z0-9_]{2,24}USDT\b/)?.[0]||''}
-function mount(d){if(d.dataset.vpvrTime29)return;d.dataset.vpvrTime29='1';const wrap=document.createElement('div');wrap.className='vpvrTime29';const tabs=document.createElement('div');tabs.className='vpvrTabs29';const out=document.createElement('div');out.textContent='Chọn khung thời gian để xem MACD và CVD.';wrap.append(tabs,out);const summary=d.querySelector('summary');if(!summary)return;summary.after(wrap);let tf='15m',seq=0;
+function mount(d){if(d.dataset.vpvrTime29)return;d.dataset.vpvrTime29='1';const wrap=document.createElement('div');wrap.className='vpvrTime29';const tabs=document.createElement('div');tabs.className='vpvrTabs29';const out=document.createElement('div');out.textContent='Chọn khung thời gian để xem MACD và CVD.';wrap.append(tabs,out);const summary=d.querySelector('summary');if(!summary)return;const vpvrSvg=Array.from(d.querySelectorAll('svg')).find(s=>s.getAttribute('viewBox')==='0 0 340 225');if(vpvrSvg)vpvrSvg.after(wrap);else summary.after(wrap);let tf='15m',seq=0;
 async function update(){const symbol=symbolOf(d);const id=++seq;if(!symbol){out.textContent='Chưa xác định mã giao dịch. Mở biểu đồ của một mã trước.';return}out.textContent='Đang tải '+symbol+' · '+tfs[tf]+'…';try{const rows=await data(symbol,tf);if(id!==seq||!wrap.isConnected)return;out.innerHTML=draw(rows)}catch(e){if(id===seq)out.textContent='Không tải được '+symbol+' · '+tfs[tf]+': '+e.message}}
 for(const [key,label] of Object.entries(tfs)){const b=document.createElement('button');b.textContent=label;b.type='button';b.setAttribute('aria-pressed',String(key===tf));b.onclick=()=>{tf=key;tabs.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));update()};tabs.append(b)}
 d.addEventListener('toggle',()=>{if(d.open)update()});if(d.open)update();
 }
 let scheduled=false;function scan(){scheduled=false;document.querySelectorAll('details').forEach(d=>{const s=d.querySelector(':scope > summary');if(s&&/VPVR/i.test(s.textContent))mount(d)})}
-new MutationObserver(()=>{if(!scheduled){scheduled=true;setTimeout(scan,250)}}).observe(document.documentElement,{subtree:true,childList:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scan);else scan();
+new MutationObserver(records=>{if(!records.some(r=>Array.from(r.addedNodes).some(n=>n.nodeType===1&&(n.matches?.('details,.chart96,.plot96')||n.querySelector?.('details')))))return;if(!scheduled){scheduled=true;setTimeout(scan,600)}}).observe(document.documentElement,{subtree:true,childList:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scan);else scan();
+})();
+</script>
+
+<style>
+/* Mobile compact indicator layout */
+.vpvrTime29{padding:6px!important;margin:6px 0!important}
+.vpvrTime29 .vpvrMetric29{font-size:11px!important;margin:3px 0!important}
+.vpvrTime29 .vpvrTabs29{padding-bottom:5px!important}
+.vpvrTime29 button{padding:6px 8px!important}
+</style>
+<script id="vpvr-price-line-fix29">
+(()=>{
+const enhance=()=>{
+document.querySelectorAll('details.advanced218[open]').forEach(d=>{
+ const svg=[...d.querySelectorAll('svg')].find(x=>x.getAttribute('viewBox')==='0 0 340 225');if(!svg||svg.dataset.price29)return;
+ const text=d.closest('.chart96,.signal96')?.querySelector('summary')?.textContent||'';
+ const symbol=text.match(/\b[A-Z0-9_]{2,24}USDT\b/)?.[0]||document.getElementById('radarSearch20')?.value;
+ if(!symbol||!window.chartHistory25)return;
+ // Price line is inserted only if the current chart candle and profile range can be verified.
+ const tf=(text.match(/\b(M1|M3|M5|M15|M30|H1|H2|H4|H6|H12|D1|W1|MN1)\b/)||[])[1];
+ const map={M1:'1m',M3:'3m',M5:'5m',M15:'15m',M30:'30m',H1:'1h',H2:'2h',H4:'4h',H6:'6h',H12:'12h',D1:'1d',W1:'1w',MN1:'1M'};
+ const k=window.chartHistory25.get(symbol+'|'+(map[tf]||'15m'));if(!k?.length)return;
+ const rows=k.filter(x=>+x[6]<Date.now()).slice(-100),lo=Math.min(...rows.map(x=>+x[3])),hi=Math.max(...rows.map(x=>+x[2])),last=+k.at(-1)[4];if(!(hi>lo&&Number.isFinite(last)))return;
+ const y=12+(hi-last)/(hi-lo)*190;
+ const ns='http://www.w3.org/2000/svg',line=document.createElementNS(ns,'path');line.setAttribute('d','M8 '+y+'H332');line.setAttribute('stroke','#6ee7b7');line.setAttribute('stroke-dasharray','4 3');line.setAttribute('stroke-width','1.2');svg.append(line);svg.dataset.price29='1';
+});
+};
+document.addEventListener('toggle',e=>{if(e.target.matches?.('details.advanced218'))setTimeout(enhance,100)},true);
 })();
 </script>
