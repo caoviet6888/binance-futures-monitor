@@ -1804,7 +1804,7 @@ function attachFlow57(details,z){
  if(socket?.readyState===0&&Date.now()-socketAt>10000){socket.close();} if(socket?.readyState===1&&lastSeen.size&&Date.now()-Math.max(...lastSeen.values())>12000){socket.close();} const missing=Object.keys(allFrames).some(t=>!liveMetrics(t,now110())?.twenty||Date.now()-(lastSeen.get(t)||0)>15000&&Date.now()-(restSeen.get(t)||0)>30000);if(Date.now()-lastSeed>(missing?12000:90000)&&!busy){lastSeed=Date.now();refresh(true);}
  const host=plot?.querySelector("details[data-flow-keep1215]");
  const tf=details.querySelector(".tabs96 button.active")?.dataset.tf||host?.dataset.flowKeep1215.split("|").at(-1)||z.v.tf;
- const raw=liveData.get(tf),now=now110(),fresh=Date.now()-(lastSeen.get(tf)||0)<15000;
+ const raw=liveData.get(tf),now=now110(),fresh=Date.now()-(lastSeen.get(tf)||0)<15000; if(raw?.length&&+raw.at(-1)[6]<now&&Date.now()-(restSeen.get(tf)||0)>5000&&!busy){restSeen.set(tf,Date.now());seed(tf,epoch).catch(()=>{});}
  if(raw?.length>=2&&fresh&&host?.dataset.flowKeep1215===symbol+"|"+tf){
  const end=raw.at(-1),stamp=tf+"|"+revisions.get(tf);
  if(stamp!==lastDraw||!plot.querySelector("[data-live47]")){
